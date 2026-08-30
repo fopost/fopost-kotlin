@@ -1,0 +1,17 @@
+build/
+out/
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+*.class
+.kotlin/
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.classpath
+.project
+.DS_Store
+local.properties
+.env
