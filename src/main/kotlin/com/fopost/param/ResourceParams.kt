@@ -88,6 +88,24 @@ public data class CreateTelegramConnectCodeParams(val workspaceId: String? = nul
 @Serializable
 public data class SetTelegramBotCommandsParams(val commands: List<com.fopost.model.TelegramBotCommand>)
 
+/**
+ * A partial update to a Slack posting identity. A field never set keeps its value and `null` clears
+ * it. Set [iconUrl] or [iconEmoji], not both; setting one clears the other.
+ */
+public class UpdateSlackIdentityParams {
+
+    internal val fields: MutableMap<String, String?> = linkedMapOf()
+
+    /** 1-80 characters, or `null` for the app name. */
+    public fun username(value: String?): UpdateSlackIdentityParams = apply { fields["username"] = value }
+
+    /** An http(s) image URL, or `null` to clear it. */
+    public fun iconUrl(value: String?): UpdateSlackIdentityParams = apply { fields["icon_url"] = value }
+
+    /** An emoji code such as `:rocket:`, or `null` to clear it. */
+    public fun iconEmoji(value: String?): UpdateSlackIdentityParams = apply { fields["icon_emoji"] = value }
+}
+
 /** A webhook being registered. Events come from [com.fopost.model.WebhookEvents]. */
 @Serializable
 public data class CreateWebhookParams(

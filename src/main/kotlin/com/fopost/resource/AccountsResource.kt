@@ -6,6 +6,9 @@ import com.fopost.model.AccountAnalyticsHistory
 import com.fopost.model.AccountHealth
 import com.fopost.model.AccountValidation
 import com.fopost.model.AccountsHealthSummary
+import com.fopost.model.SlackChannel
+import com.fopost.model.SlackIdentity
+import com.fopost.model.SlackMember
 import com.fopost.model.TelegramBotCommand
 import com.fopost.model.TelegramBotCommands
 import com.fopost.model.TelegramConnectCode
@@ -15,6 +18,7 @@ import com.fopost.param.CreateAccountParams
 import com.fopost.param.CreateTelegramConnectCodeParams
 import com.fopost.param.MoveAccountParams
 import com.fopost.param.SetTelegramBotCommandsParams
+import com.fopost.param.UpdateSlackIdentityParams
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.buildJsonObject
@@ -156,4 +160,31 @@ public class AccountsResource internal constructor(private val http: ApiClient) 
     /** Clear the command menu for this Telegram chat. */
     public suspend fun deleteTelegramBotCommands(accountId: String): TelegramBotCommands =
         http.call("DELETE", "/accounts/$accountId/telegram/commands", TelegramBotCommands.serializer())
+
+    /**
+     * Channels the Slack app can post to: every public channel, and private ones it was invited to.
+     *
+     * A 409 `webhook_connection` means the account posts through a webhook; reconnect it with the
+     * Slack app. The same applies to the other Slack calls.
+     */
+    public suspend fun listSlackChannels(accountId: String): List<SlackChannel> =
+        http.callList("GET", "/accounts/$accountId/slack/channels", SlackChannel.serializer())
+
+    /** People in the connected Slack workspace, for addressing a DM. */
+    public suspend fun listSlackMembers(accountId: String): List<SlackMember> =
+        http.callList("GET", "/accounts/$accountId/slack/members", SlackMember.serializer())
+
+    /** The name and icon this Slack account posts under. */
+    public suspend fun getSlackIdentity(accountId: String): SlackIdentity =
+        http.call("GET", "/accounts/$accountId/slack/identity", SlackIdentity.serializer())
+
+    /** Change the name or icon this Slack account posts under. */
+    public suspend fun updateSlackIdentity(accountId: String, params: UpdateSlackIdentityParams): SlackIdentity =
+        http.call(
+            "PATCH",
+            "/accounts/$accountId/slack/identity",
+            SlackIdentity.serializer(),
+            // Built by hand so a null is sent, not dropped.
+            http.jsonBody(buildJsonObject { params.fields.forEach { (key, value) -> put(key, value) } }),
+        )
 }
