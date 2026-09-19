@@ -93,7 +93,7 @@ the real API.
 - Everything a caller touches is a `suspend` function; nothing blocks.
 - Models are `data class` with nullable defaults; parameters are `data class` with `null`
   defaults so unset fields are omitted.
-- Version `0.1.0` lives in `gradle.properties` **and** `internal/Version.kt`. Bump both — the
+- Version `0.2.0` lives in `gradle.properties` **and** `internal/Version.kt`. Bump both — the
   release workflow fails if they disagree.
 
 ## Releasing

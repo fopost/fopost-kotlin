@@ -9,14 +9,14 @@ platforms from your code — on the JVM and on Android.
 
 ```kotlin
 // build.gradle.kts
-implementation("com.fopost:fopost-kotlin:0.1.0")
+implementation("com.fopost:fopost-kotlin:0.2.0")
 ```
 
 ```xml
 <dependency>
   <groupId>com.fopost</groupId>
   <artifactId>fopost-kotlin</artifactId>
-  <version>0.1.0</version>
+  <version>0.2.0</version>
 </dependency>
 ```
 
