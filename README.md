@@ -165,7 +165,7 @@ client.posts.listAll(PostListParams(workspaceId = workspaceId))
 | `analytics`   | `overview`, `timeSeries`, `topPosts`, `labels`, `postsTable`, `postingStreak`, `demographics`, `collect`                                                                                                                                                          |
 | `automations` | `list`, `get`, `create`, `update`, `delete`, `toggle`, `runs`, `run`, `trigger`, `stats`                                                                                                                                                                          |
 | `media`       | `list`, `upload`, `presign`, `complete`, `uploadDirect`, `delete`                                                                                                                                                                                                |
-| `inbox`       | `list`, `threads`, `conversations`, `unreadCount`, `accounts`, `platforms`, `markThreadRead`, `refresh`, `update`, `reply`, `hide`, `unhide`, `delete`, `listApprovals`, `approveReply`, `rejectReply`                                                        |
+| `inbox`       | `list`, `threads`, `conversations`, `unreadCount`, `accounts`, `platforms`, `markThreadRead`, `refresh`, `update`, `editComment`, `reply`, `hide`, `unhide`, `delete`, `like`, `unlike`, `pin`, `unpin`, `react`, `startConversation`, `setTyping`, `listApprovals`, `approveReply`, `rejectReply` |
 | `ads`         | `list`, `external`, `boostable`, `connections`, `sources`, `authorizeMeta`, `deleteConnection`, `boost`, `create`, `refresh`, `setStatus`, `delete`, `audiences`, `createAudience`, `searchTargeting`, `leadForms`, `createLeadForm`, `leads`                    |
 | `validate`    | `post`, `length`, `media`                                                                                                                                                                                                                                        |
 
@@ -299,6 +299,9 @@ the workspaces that key can reach. `posts` also covers publishing, deliveries, a
 are `workspaces`, `accounts`, `labels`, `webhooks`, `analytics`, `automations`, `inbox`, and `ads`.
 `ads.boost`, `ads.create`, `ads.setStatus` and `ads.delete` spend money and need `publish` as well
 as `ads`; a boost or ad starts paused unless `paused` is `false`.
+`inbox.editComment`, `like`, `unlike`, `pin`, `unpin`, `react`, `startConversation`, `setTyping`,
+deleting our own reply, and a reply with `mediaIds` or `quickReplies` need `publish` as well as
+`inbox`.
 
 ## Example
 
