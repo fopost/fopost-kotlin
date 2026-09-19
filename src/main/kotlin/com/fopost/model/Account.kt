@@ -33,6 +33,10 @@ public data class Account(
     @SerialName("created_at") @JsonNames("createdAt") val createdAt: Instant? = null,
     @SerialName("updated_at") @JsonNames("updatedAt") val updatedAt: Instant? = null,
     @SerialName("platform_name") @JsonNames("platformName") val platformName: String? = null,
+    /** True when the account was connected before FoPost asked for a permission it now needs. */
+    @SerialName("reconnect_required")
+    @JsonNames("reconnectRequired")
+    val reconnectRequired: Boolean? = null,
 )
 
 /** Token validity for one account. `healthStatus` is healthy, degraded, expired, revoked or unknown. */

@@ -50,3 +50,19 @@ public data class MediaValidation(
     @SerialName("mime_type") @JsonNames("mimeType") val mimeType: String? = null,
     val type: String? = null,
 )
+
+/**
+ * Whether a subreddit exists and takes a post from one account.
+ *
+ * [ok] is true when both hold. A private, banned or missing subreddit answers with [exists]
+ * false rather than failing.
+ */
+@Serializable
+public data class SubredditValidation(
+    val subreddit: String? = null,
+    val exists: Boolean = false,
+    @SerialName("can_post") @JsonNames("canPost") val canPost: Boolean = false,
+    @SerialName("over_18") @JsonNames("over18") val over18: Boolean = false,
+    @SerialName("flair_enabled") @JsonNames("flairEnabled") val flairEnabled: Boolean = false,
+    val ok: Boolean = false,
+)

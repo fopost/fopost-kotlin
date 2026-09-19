@@ -131,6 +131,9 @@ internal data class RefreshInboxBody(@SerialName("workspace_id") val workspaceId
 internal data class InboxTextBody(val text: String? = null)
 
 @Serializable
+internal data class InboxVoteBody(val direction: String)
+
+@Serializable
 internal data class InboxReplyBody(
     val text: String? = null,
     @SerialName("media_ids") val mediaIds: List<String>? = null,

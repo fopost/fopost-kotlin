@@ -78,6 +78,8 @@ public data class InboxItem(
     @SerialName("can_reply") @JsonNames("canReply") val canReply: Boolean? = null,
     val hidden: Boolean? = null,
     val liked: Boolean? = null,
+    /** How the account voted, where the network ranks by votes: `up` or `down`. */
+    val vote: String? = null,
     val pinned: Boolean? = null,
     /** Our reaction on a DM. */
     val reaction: String? = null,
@@ -86,6 +88,7 @@ public data class InboxItem(
     /** A comment someone left, or our own reply. */
     @SerialName("can_delete") @JsonNames("canDelete") val canDelete: Boolean? = null,
     @SerialName("can_like") @JsonNames("canLike") val canLike: Boolean? = null,
+    @SerialName("can_vote") @JsonNames("canVote") val canVote: Boolean? = null,
     /** Our own comment only. */
     @SerialName("can_pin") @JsonNames("canPin") val canPin: Boolean? = null,
     /** Our own comment only. */

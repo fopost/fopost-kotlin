@@ -4,12 +4,13 @@ import com.fopost.internal.ApiClient
 import com.fopost.model.LengthValidation
 import com.fopost.model.MediaValidation
 import com.fopost.model.PostValidation
+import com.fopost.model.SubredditValidation
 import com.fopost.param.ValidateLengthParams
 import com.fopost.param.ValidateMediaParams
 import com.fopost.param.ValidatePostParams
 
 /**
- * Check a draft, a text or a file against platform rules without creating anything.
+ * Check a draft, a text, a file or a subreddit against platform rules without creating anything.
  *
  * Every method needs the `posts` scope. Nothing is stored server-side.
  */
@@ -40,5 +41,20 @@ public class ValidateResource internal constructor(private val http: ApiClient) 
             "/validate/media",
             MediaValidation.serializer(),
             http.jsonBody(ValidateMediaParams(url), ValidateMediaParams.serializer()),
+        )
+
+    /**
+     * Whether the subreddit [name] exists and takes a post from [accountId].
+     *
+     * The check runs with that account's own token, so the account has to be one the key can see.
+     * A private, banned or missing subreddit still answers 200, with [SubredditValidation.exists]
+     * false.
+     */
+    public suspend fun subreddit(accountId: String, name: String): SubredditValidation =
+        http.call(
+            "GET",
+            "/validate/subreddit",
+            SubredditValidation.serializer(),
+            query = mapOf("account_id" to accountId, "name" to name),
         )
 }

@@ -6,6 +6,12 @@ import com.fopost.model.AccountAnalyticsHistory
 import com.fopost.model.AccountHealth
 import com.fopost.model.AccountValidation
 import com.fopost.model.AccountsHealthSummary
+import com.fopost.model.RedditDefaultSubreddit
+import com.fopost.model.RedditFlair
+import com.fopost.model.RedditFlairs
+import com.fopost.model.RedditSubreddit
+import com.fopost.model.RedditSubredditRule
+import com.fopost.model.RedditSubredditRules
 import com.fopost.model.SlackChannel
 import com.fopost.model.SlackIdentity
 import com.fopost.model.SlackMember
@@ -169,6 +175,54 @@ public class AccountsResource internal constructor(private val http: ApiClient) 
      */
     public suspend fun listSlackChannels(accountId: String): List<SlackChannel> =
         http.callList("GET", "/accounts/$accountId/slack/channels", SlackChannel.serializer())
+
+    /**
+     * Subreddits this Reddit account is subscribed to, busiest first, plus its own profile page.
+     *
+     * [RedditSubreddit.canPost] is false where the account may read but not submit, and
+     * [RedditSubreddit.isDefault] marks the subreddit posts go to when a post names none. A 409
+     * `reconnect_required` means the account has to be reconnected first. The same applies to the
+     * other Reddit calls.
+     */
+    public suspend fun listRedditSubreddits(accountId: String): List<RedditSubreddit> =
+        http.callList("GET", "/accounts/$accountId/reddit/subreddits", RedditSubreddit.serializer())
+
+    /** The rules a subreddit publishes, in its own order. [subreddit] carries no `r/` prefix. */
+    public suspend fun listRedditSubredditRules(accountId: String, subreddit: String): List<RedditSubredditRule> =
+        http.call(
+            "GET",
+            "/accounts/$accountId/reddit/subreddits/$subreddit/rules",
+            RedditSubredditRules.serializer(),
+        ).rules
+
+    /**
+     * Post flairs one subreddit offers.
+     *
+     * A flair id is valid only in the subreddit it came from: pass it as `flair_id` in the post's
+     * Reddit platform settings, and preflight rejects an id from anywhere else.
+     */
+    public suspend fun listRedditFlairs(accountId: String, subreddit: String): List<RedditFlair> =
+        http.call(
+            "GET",
+            "/accounts/$accountId/reddit/flairs",
+            RedditFlairs.serializer(),
+            query = mapOf("subreddit" to subreddit),
+        ).flairs
+
+    /**
+     * Set where posts from this Reddit account go when a post names no subreddit.
+     *
+     * `null` falls back to the account's own profile page, which always takes a post. Returns the
+     * subreddit that is now in effect.
+     */
+    public suspend fun setRedditDefaultSubreddit(accountId: String, subreddit: String?): String? =
+        http.call(
+            "PUT",
+            "/accounts/$accountId/reddit/default-subreddit",
+            RedditDefaultSubreddit.serializer(),
+            // Built by hand so a null is sent, not dropped.
+            http.jsonBody(buildJsonObject { put("subreddit", subreddit) }),
+        ).subreddit
 
     /** People in the connected Slack workspace, for addressing a DM. */
     public suspend fun listSlackMembers(accountId: String): List<SlackMember> =

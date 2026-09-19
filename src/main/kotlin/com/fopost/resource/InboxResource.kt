@@ -18,6 +18,7 @@ import com.fopost.param.InboxReplyBody
 import com.fopost.param.InboxTextBody
 import com.fopost.param.InboxThreadListParams
 import com.fopost.param.InboxTypingBody
+import com.fopost.param.InboxVoteBody
 import com.fopost.param.MarkInboxReadParams
 import com.fopost.param.RefreshInboxBody
 import com.fopost.param.StartInboxConversationParams
@@ -139,6 +140,21 @@ public class InboxResource internal constructor(private val http: ApiClient) {
 
     public suspend fun unlike(itemId: String): InboxItem =
         http.call("POST", "/inbox/$itemId/unlike", InboxItem.serializer())
+
+    /**
+     * Vote the item up or down where the network ranks by votes (Reddit), or take an earlier vote
+     * back with `none`.
+     *
+     * Only where `canVote` is true. An upvote is the same call a like makes, so `liked` moves with
+     * it. Needs the `publish` scope.
+     */
+    public suspend fun vote(itemId: String, direction: String): InboxItem =
+        http.call(
+            "POST",
+            "/inbox/$itemId/vote",
+            InboxItem.serializer(),
+            http.jsonBody(InboxVoteBody(direction), InboxVoteBody.serializer()),
+        )
 
     /** Pin our own comment on the platform. Needs the `publish` scope. */
     public suspend fun pin(itemId: String): InboxItem =
