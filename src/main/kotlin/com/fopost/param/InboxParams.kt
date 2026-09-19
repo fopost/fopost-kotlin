@@ -111,8 +111,34 @@ public data class UpdateInboxItemParams(
     val snoozedUntil: Instant? = null,
 )
 
+/**
+ * A new DM: either [handle] with [accountId], or [commentId] to answer an inbox comment privately.
+ */
+@Serializable
+public data class StartInboxConversationParams(
+    val text: String,
+    @SerialName("account_id") val accountId: String? = null,
+    val handle: String? = null,
+    @SerialName("comment_id") val commentId: String? = null,
+    /** Media library ids to attach, at most 10. */
+    @SerialName("media_ids") val mediaIds: List<String>? = null,
+)
+
 @Serializable
 internal data class RefreshInboxBody(@SerialName("workspace_id") val workspaceId: String)
 
 @Serializable
 internal data class InboxTextBody(val text: String? = null)
+
+@Serializable
+internal data class InboxReplyBody(
+    val text: String? = null,
+    @SerialName("media_ids") val mediaIds: List<String>? = null,
+    @SerialName("quick_replies") val quickReplies: List<String>? = null,
+)
+
+@Serializable
+internal data class InboxTypingBody(
+    @SerialName("account_id") val accountId: String,
+    val on: Boolean? = null,
+)

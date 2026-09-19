@@ -5,6 +5,7 @@ import com.fopost.model.InboxAccount
 import com.fopost.model.InboxApproval
 import com.fopost.model.InboxApprovalDecision
 import com.fopost.model.InboxConversation
+import com.fopost.model.InboxConversationStart
 import com.fopost.model.InboxItem
 import com.fopost.model.InboxPlatform
 import com.fopost.model.InboxRefreshResult
@@ -13,15 +14,20 @@ import com.fopost.model.InboxThread
 import com.fopost.model.Page
 import com.fopost.param.InboxConversationListParams
 import com.fopost.param.InboxListParams
+import com.fopost.param.InboxReplyBody
 import com.fopost.param.InboxTextBody
 import com.fopost.param.InboxThreadListParams
+import com.fopost.param.InboxTypingBody
 import com.fopost.param.MarkInboxReadParams
 import com.fopost.param.RefreshInboxBody
+import com.fopost.param.StartInboxConversationParams
 import com.fopost.param.UpdateInboxItemParams
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 
 /** Comments, mentions and direct messages on connected accounts. Needs the `inbox` scope. */
 public class InboxResource internal constructor(private val http: ApiClient) {
@@ -81,13 +87,34 @@ public class InboxResource internal constructor(private val http: ApiClient) {
             http.jsonBody(params, UpdateInboxItemParams.serializer()),
         )
 
-    /** Send the reply on the platform as the connected account. */
-    public suspend fun reply(itemId: String, text: String): InboxReplyResult =
+    /**
+     * Edit our own comment on the platform. Needs the `publish` scope; only where
+     * [InboxItem.canEdit] is true.
+     */
+    public suspend fun editComment(itemId: String, text: String): InboxItem =
+        http.call(
+            "PATCH",
+            "/inbox/$itemId",
+            InboxItem.serializer(),
+            http.jsonBody(InboxTextBody(text), InboxTextBody.serializer()),
+        )
+
+    /**
+     * Send the reply on the platform as the connected account. [text] may be omitted when
+     * [mediaIds] (media library ids, at most 10) is given; [mediaIds] and [quickReplies] (at most
+     * 13, each up to 20 characters) apply to DMs and need the `publish` scope.
+     */
+    public suspend fun reply(
+        itemId: String,
+        text: String? = null,
+        mediaIds: List<String>? = null,
+        quickReplies: List<String>? = null,
+    ): InboxReplyResult =
         http.call(
             "POST",
             "/inbox/$itemId/reply",
             InboxReplyResult.serializer(),
-            http.jsonBody(InboxTextBody(text), InboxTextBody.serializer()),
+            http.jsonBody(InboxReplyBody(text, mediaIds, quickReplies), InboxReplyBody.serializer()),
         )
 
     /** Hide the comment on the platform. */
@@ -97,10 +124,63 @@ public class InboxResource internal constructor(private val http: ApiClient) {
     public suspend fun unhide(itemId: String): InboxItem =
         http.call("POST", "/inbox/$itemId/unhide", InboxItem.serializer())
 
-    /** Delete the comment on the platform. Returns whether it was removed. */
+    /**
+     * Delete the comment, or our own reply, on the platform. Deleting our own reply needs the
+     * `publish` scope. Returns whether it was removed.
+     */
     public suspend fun delete(itemId: String): Boolean {
         val data = http.call("DELETE", "/inbox/$itemId", JsonObject.serializer())
         return data["deleted"]?.jsonPrimitive?.booleanOrNull ?: false
+    }
+
+    /** Like the item on the platform. Needs the `publish` scope. */
+    public suspend fun like(itemId: String): InboxItem =
+        http.call("POST", "/inbox/$itemId/like", InboxItem.serializer())
+
+    public suspend fun unlike(itemId: String): InboxItem =
+        http.call("POST", "/inbox/$itemId/unlike", InboxItem.serializer())
+
+    /** Pin our own comment on the platform. Needs the `publish` scope. */
+    public suspend fun pin(itemId: String): InboxItem =
+        http.call("POST", "/inbox/$itemId/pin", InboxItem.serializer())
+
+    public suspend fun unpin(itemId: String): InboxItem =
+        http.call("POST", "/inbox/$itemId/unpin", InboxItem.serializer())
+
+    /**
+     * React to a DM with an emoji (at most 32 characters), or pass `null` to remove ours. Needs
+     * the `publish` scope.
+     */
+    public suspend fun react(itemId: String, reaction: String?): InboxItem =
+        http.call(
+            "POST",
+            "/inbox/$itemId/react",
+            InboxItem.serializer(),
+            // Built by hand: the configured Json drops nulls, and a null here means remove.
+            http.jsonBody(buildJsonObject { put("reaction", reaction) }),
+        )
+
+    /** Open a DM by handle, or answer an inbox comment privately. Needs the `publish` scope. */
+    public suspend fun startConversation(params: StartInboxConversationParams): InboxConversationStart =
+        http.call(
+            "POST",
+            "/inbox/conversations",
+            InboxConversationStart.serializer(),
+            http.jsonBody(params, StartInboxConversationParams.serializer()),
+        )
+
+    /**
+     * Show the typing indicator in a DM conversation, or clear it with [on] set to false. Needs
+     * the `publish` scope. Returns whether the indicator is now on.
+     */
+    public suspend fun setTyping(conversationId: String, accountId: String, on: Boolean? = null): Boolean {
+        val data = http.call(
+            "POST",
+            "/inbox/conversations/$conversationId/typing",
+            JsonObject.serializer(),
+            http.jsonBody(InboxTypingBody(accountId, on), InboxTypingBody.serializer()),
+        )
+        return data["typing"]?.jsonPrimitive?.booleanOrNull ?: false
     }
 
     /** Replies an automation or the agent drafted that a person still has to send. */
