@@ -59,6 +59,8 @@ public data class CreateAdParams(
     val destinationUrl: String? = null,
     val mediaUrl: String? = null,
     val paused: Boolean? = null,
+    /** Query string appended to every link in the ad, e.g. `utm_source=meta&utm_medium=paid`. */
+    val urlTags: String? = null,
 )
 
 /**
