@@ -58,6 +58,10 @@ public data class CreateLabelParams(
 @Serializable
 public data class UpdateLabelParams(val name: String, val color: String)
 
+/** The workspace an account is moving to. */
+@Serializable
+public data class MoveAccountParams(@kotlinx.serialization.SerialName("workspace_id") val workspaceId: String)
+
 /** An account group being created. */
 @Serializable
 public data class CreateAccountGroupParams(
