@@ -3,10 +3,15 @@ package com.fopost
 import com.fopost.model.AdBudget
 import com.fopost.model.AdTargeting
 import com.fopost.model.AdTargetingLocation
+import com.fopost.param.AdCreativeCard
+import com.fopost.param.AdObjectRef
 import com.fopost.param.AudienceSpec
 import com.fopost.param.BoostPostParams
+import com.fopost.param.BulkAdStatusParams
+import com.fopost.param.CreateAdCreativeParams
 import com.fopost.param.CreateAudienceParams
 import com.fopost.param.MetaAuthorizeParams
+import com.fopost.param.UpdateAdCampaignParams
 import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -168,5 +173,165 @@ class AdsTest {
             "/v1/ads/lead-forms/form_1/leads?connection_id=conn_1&page_id=1234&after=c1",
             server.takeRequest().path,
         )
+    }
+
+    @Test
+    fun `reads the account tree with the connection in the query`() = runTest {
+        server.enqueue(
+            json(
+                200,
+                """
+                {"data":{"adAccountId":"act_123","currency":"USD","workspaceId":"ws_1",
+                  "campaigns":[{"id":"cmp_1","name":"Launch","status":"PAUSED","budgetMinor":null,
+                    "adSets":[{"id":"set_1","campaignId":"cmp_1","status":"PAUSED","budgetMinor":2000,"budgetType":"daily",
+                      "ads":[{"id":"ad_9","adSetId":"set_1","creativeId":"cr_1","status":"PAUSED"}]}]}]}}
+                """.trimIndent(),
+            ),
+        )
+
+        val tree = server.client().use { it.ads.accountTree("act_123", "conn_1", workspaceId = "ws_1") }
+
+        val request = server.takeRequest()
+        assertEquals("GET", request.method)
+        assertEquals("/v1/ads/accounts/act_123/tree?workspace_id=ws_1&connection_id=conn_1", request.path)
+        assertNull(tree.campaigns[0].budgetMinor)
+        assertEquals(2000L, tree.campaigns[0].adSets[0].budgetMinor)
+        assertEquals("cr_1", tree.campaigns[0].adSets[0].ads[0].creativeId)
+    }
+
+    @Test
+    fun `updates, duplicates and bulk-pauses campaign objects`() = runTest {
+        server.enqueue(json(200, """{"data":{"id":"cmp_1","status":"ACTIVE"}}"""))
+        server.enqueue(json(201, """{"data":{"id":"cmp_2"}}"""))
+        server.enqueue(
+            json(
+                200,
+                """{"data":[{"id":"cmp_1","level":"campaign","ok":true,"error":null},
+                   {"id":"ad_9","level":"ad","ok":false,"error":"Not found"}]}""",
+            ),
+        )
+
+        val (copyId, results) = server.client().use { client ->
+            client.ads.updateCampaign("cmp_1", "ws_1", "conn_1", UpdateAdCampaignParams(status = "active"))
+            val copy = client.ads.duplicateCampaign("cmp_1", "ws_1", "conn_1", paused = false)
+            copy to client.ads.bulkSetStatus(
+                BulkAdStatusParams(
+                    workspaceId = "ws_1",
+                    connectionId = "conn_1",
+                    status = "paused",
+                    objects = listOf(AdObjectRef("cmp_1", "campaign"), AdObjectRef("ad_9", "ad")),
+                ),
+            )
+        }
+
+        val update = server.takeRequest()
+        assertEquals("PATCH", update.method)
+        assertEquals("/v1/ads/campaigns/cmp_1?workspace_id=ws_1&connection_id=conn_1", update.path)
+        assertEquals("""{"status":"active"}""", update.body.readUtf8())
+
+        val duplicate = server.takeRequest()
+        assertEquals("/v1/ads/campaigns/cmp_1/duplicate?workspace_id=ws_1&connection_id=conn_1", duplicate.path)
+        assertEquals("""{"paused":false}""", duplicate.body.readUtf8())
+        assertEquals("cmp_2", copyId)
+
+        val bulk = Json.parseToJsonElement(server.takeRequest().body.readUtf8()).jsonObject
+        assertEquals("campaign", bulk["objects"]!!.jsonArray[0].jsonObject["level"]!!.jsonPrimitive.content)
+        assertEquals("Not found", results[1].error)
+    }
+
+    @Test
+    fun `sends the insights range, breakdown and daily flag`() = runTest {
+        server.enqueue(
+            json(
+                200,
+                """
+                {"data":{"objectId":"cmp_1","currency":"USD","since":"2026-09-01","until":"2026-09-07","breakdownBy":"age",
+                  "totals":{"impressions":1000,"reach":800,"clicks":40,"spendMinor":1500,"ctr":4.0,"leads":3},
+                  "breakdown":[{"key":"25-34","metrics":{"impressions":600,"spendMinor":900,"ctr":5.0}}],
+                  "timeline":[{"date":"2026-09-01","metrics":{"impressions":100,"spendMinor":150}}]}}
+                """.trimIndent(),
+            ),
+        )
+        server.enqueue(json(200, """{"data":{"objectId":"x","totals":null,"breakdown":[],"timeline":[]}}"""))
+
+        val (report, empty) = server.client().use { client ->
+            client.ads.insights(
+                "conn_1",
+                "cmp_1",
+                since = "2026-09-01",
+                until = "2026-09-07",
+                breakdown = "age",
+                daily = true,
+                workspaceId = "ws_1",
+            ) to client.ads.adInsights("ad_1", "ws_1", since = "2026-09-01", until = "2026-09-07")
+        }
+
+        assertEquals(
+            "/v1/ads/insights?workspace_id=ws_1&connection_id=conn_1&object_id=cmp_1" +
+                "&since=2026-09-01&until=2026-09-07&breakdown=age&daily=true",
+            server.takeRequest().path,
+        )
+        assertEquals("/v1/ads/ad_1/insights?workspace_id=ws_1&since=2026-09-01&until=2026-09-07", server.takeRequest().path)
+        assertEquals(4.0, report.totals?.ctr)
+        assertEquals("25-34", report.breakdown[0].key)
+        assertEquals(150L, report.timeline[0].metrics?.spendMinor)
+        assertNull(empty.totals)
+    }
+
+    @Test
+    fun `pages the leads feed with the cursor`() = runTest {
+        server.enqueue(
+            json(
+                200,
+                """{"data":{"leads":[{"id":"f_1","leadId":"m_1","pageId":"page_1","isOrganic":true,
+                   "fields":[{"name":"email","values":["jordan@yourbrand.com"]}],
+                   "submittedAt":"2026-09-02T08:00:00Z"}],"nextCursor":"cur_2"}}""",
+            ),
+        )
+        server.enqueue(json(200, """{"data":{"leads":[],"nextCursor":null}}"""))
+
+        val (first, next) = server.client().use { client ->
+            val first = client.ads.leadsFeed(workspaceId = "ws_1", formId = "form_1", limit = 50)
+            first to client.ads.leadsFeed(workspaceId = "ws_1", cursor = first.nextCursor)
+        }
+
+        assertEquals("/v1/ads/leads?workspace_id=ws_1&form_id=form_1&limit=50", server.takeRequest().path)
+        assertEquals("/v1/ads/leads?workspace_id=ws_1&cursor=cur_2", server.takeRequest().path)
+        assertEquals("m_1", first.leads[0].leadId)
+        assertEquals(listOf("jordan@yourbrand.com"), first.leads[0].fields[0].values)
+        assertEquals(Instant.parse("2026-09-02T08:00:00Z"), first.leads[0].submittedAt)
+        assertNull(next.nextCursor)
+    }
+
+    @Test
+    fun `creates a carousel creative with url tags and lists creatives`() = runTest {
+        server.enqueue(json(201, """{"data":{"id":"cr_1","format":"carousel","urlTags":"utm_source=meta"}}"""))
+        server.enqueue(json(200, """{"data":{"creatives":[{"id":"cr_1","name":"Spring"}],"workspaceId":"ws_1"}}"""))
+
+        val (creative, list) = server.client().use { client ->
+            client.ads.createCreative(
+                CreateAdCreativeParams(
+                    workspaceId = "ws_1",
+                    connectionId = "conn_1",
+                    adAccountId = "act_123",
+                    pageId = "page_1",
+                    name = "Spring",
+                    format = "carousel",
+                    text = "New season",
+                    urlTags = "utm_source=meta",
+                    cards = listOf(
+                        AdCreativeCard("https://cdn.yourbrand.com/1.jpg"),
+                        AdCreativeCard("https://cdn.yourbrand.com/2.jpg"),
+                    ),
+                ),
+            ) to client.ads.creatives("conn_1", "act_123")
+        }
+
+        val body = Json.parseToJsonElement(server.takeRequest().body.readUtf8()).jsonObject
+        assertEquals("utm_source=meta", body["urlTags"]!!.jsonPrimitive.content)
+        assertEquals(2, body["cards"]!!.jsonArray.size)
+        assertEquals("utm_source=meta", creative.urlTags)
+        assertEquals("/v1/ads/creatives?connection_id=conn_1&ad_account_id=act_123", server.takeRequest().path)
+        assertEquals("Spring", list[0].name)
     }
 }

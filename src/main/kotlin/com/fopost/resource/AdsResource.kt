@@ -2,30 +2,59 @@ package com.fopost.resource
 
 import com.fopost.internal.ApiClient
 import com.fopost.model.Ad
+import com.fopost.model.AdAccountTree
+import com.fopost.model.AdCampaign
 import com.fopost.model.AdConnection
+import com.fopost.model.AdCreative
+import com.fopost.model.AdCreativesResult
+import com.fopost.model.AdInsightsReport
+import com.fopost.model.AdSet
 import com.fopost.model.AdSource
+import com.fopost.model.Audience
 import com.fopost.model.AudiencesResult
 import com.fopost.model.BoostablePost
+import com.fopost.model.BulkAdStatusResult
 import com.fopost.model.CreatedAudience
 import com.fopost.model.ExternalAd
+import com.fopost.model.LeadFormDetail
 import com.fopost.model.LeadFormSource
+import com.fopost.model.LeadPage
+import com.fopost.model.LeadPageSubscription
+import com.fopost.model.LeadsFeed
 import com.fopost.model.LeadsPage
+import com.fopost.model.NetworkAd
+import com.fopost.model.ReachEstimate
 import com.fopost.model.TargetingOption
+import com.fopost.param.AddAudienceUsersBody
 import com.fopost.param.BoostPostParams
+import com.fopost.param.BulkAdStatusParams
+import com.fopost.param.CreateAdCampaignParams
+import com.fopost.param.CreateAdCreativeParams
 import com.fopost.param.CreateAdParams
+import com.fopost.param.CreateAdSetParams
 import com.fopost.param.CreateAudienceParams
 import com.fopost.param.CreateLeadFormParams
+import com.fopost.param.CreateNetworkAdParams
+import com.fopost.param.DuplicateAdObjectBody
+import com.fopost.param.LeadPageBody
 import com.fopost.param.MetaAuthorizeParams
+import com.fopost.param.ReachEstimateParams
 import com.fopost.param.SetAdStatusBody
+import com.fopost.param.UpdateAdCampaignParams
+import com.fopost.param.UpdateAdSetParams
+import com.fopost.param.UpdateAudienceParams
+import com.fopost.param.UpdateNetworkAdParams
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
 
 /**
- * Meta ads, audiences and lead forms.
+ * Meta ads, campaigns, creatives, audiences, insights and lead forms.
  *
  * Every method needs the `ads` scope. [boost], [create], [setStatus] and [delete] spend money and
- * also need `publish`.
+ * also need `publish`, as do creating, updating, deleting and duplicating campaigns, ad sets and
+ * network ads, and [bulkSetStatus].
  */
 public class AdsResource internal constructor(private val http: ApiClient) {
 
@@ -42,7 +71,12 @@ public class AdsResource internal constructor(private val http: ApiClient) {
         http.callList("GET", "/ads/boostable", BoostablePost.serializer(), query = mapOf("workspace_id" to workspaceId))
 
     public suspend fun connections(workspaceId: String? = null): List<AdConnection> =
-        http.callList("GET", "/ads/connections", AdConnection.serializer(), query = mapOf("workspace_id" to workspaceId))
+        http.callList(
+            "GET",
+            "/ads/connections",
+            AdConnection.serializer(),
+            query = mapOf("workspace_id" to workspaceId),
+        )
 
     /** Each connection with the ad accounts and Pages its grant reaches. */
     public suspend fun sources(workspaceId: String? = null): List<AdSource> =
@@ -99,6 +133,238 @@ public class AdsResource internal constructor(private val http: ApiClient) {
         http.send("DELETE", "/ads/$adId", query = mapOf("workspace_id" to workspaceId))
     }
 
+    // Campaigns, ad sets and ads on the ad account, read live from Meta by their Meta ids.
+
+    /** Every campaign on the ad account with its ad sets and ads. */
+    public suspend fun accountTree(adAccountId: String, connectionId: String, workspaceId: String? = null): AdAccountTree =
+        http.call(
+            "GET",
+            "/ads/accounts/$adAccountId/tree",
+            AdAccountTree.serializer(),
+            query = connection(workspaceId, connectionId),
+        )
+
+    /** Needs the `publish` scope as well as `ads`. Starts paused unless `paused` is `false`. */
+    public suspend fun createCampaign(params: CreateAdCampaignParams): AdCampaign =
+        http.call(
+            "POST",
+            "/ads/campaigns",
+            AdCampaign.serializer(),
+            http.jsonBody(params, CreateAdCampaignParams.serializer()),
+        )
+
+    public suspend fun campaign(campaignId: String, connectionId: String, workspaceId: String? = null): AdCampaign =
+        http.call(
+            "GET",
+            "/ads/campaigns/$campaignId",
+            AdCampaign.serializer(),
+            query = connection(workspaceId, connectionId),
+        )
+
+    /** Needs the `publish` scope as well as `ads`. */
+    public suspend fun updateCampaign(
+        campaignId: String,
+        workspaceId: String,
+        connectionId: String,
+        params: UpdateAdCampaignParams,
+    ): AdCampaign =
+        http.call(
+            "PATCH",
+            "/ads/campaigns/$campaignId",
+            AdCampaign.serializer(),
+            http.jsonBody(params, UpdateAdCampaignParams.serializer()),
+            query = connection(workspaceId, connectionId),
+        )
+
+    /** Deletes the campaign with its ad sets and ads. Needs the `publish` scope as well as `ads`. */
+    public suspend fun deleteCampaign(campaignId: String, workspaceId: String, connectionId: String) {
+        http.send("DELETE", "/ads/campaigns/$campaignId", query = connection(workspaceId, connectionId))
+    }
+
+    /**
+     * Copy the campaign and everything in it. Returns the copy's Meta id. The copy starts paused
+     * unless [paused] is `false`. Needs the `publish` scope as well as `ads`.
+     */
+    public suspend fun duplicateCampaign(
+        campaignId: String,
+        workspaceId: String,
+        connectionId: String,
+        paused: Boolean? = null,
+    ): String = duplicate("/ads/campaigns/$campaignId", workspaceId, connectionId, paused)
+
+    /** Needs the `publish` scope as well as `ads`. Starts paused unless `paused` is `false`. */
+    public suspend fun createAdSet(params: CreateAdSetParams): AdSet =
+        http.call("POST", "/ads/ad-sets", AdSet.serializer(), http.jsonBody(params, CreateAdSetParams.serializer()))
+
+    public suspend fun adSet(adSetId: String, connectionId: String, workspaceId: String? = null): AdSet =
+        http.call("GET", "/ads/ad-sets/$adSetId", AdSet.serializer(), query = connection(workspaceId, connectionId))
+
+    /** Needs the `publish` scope as well as `ads`. */
+    public suspend fun updateAdSet(
+        adSetId: String,
+        workspaceId: String,
+        connectionId: String,
+        params: UpdateAdSetParams,
+    ): AdSet =
+        http.call(
+            "PATCH",
+            "/ads/ad-sets/$adSetId",
+            AdSet.serializer(),
+            http.jsonBody(params, UpdateAdSetParams.serializer()),
+            query = connection(workspaceId, connectionId),
+        )
+
+    /** Needs the `publish` scope as well as `ads`. */
+    public suspend fun deleteAdSet(adSetId: String, workspaceId: String, connectionId: String) {
+        http.send("DELETE", "/ads/ad-sets/$adSetId", query = connection(workspaceId, connectionId))
+    }
+
+    /** Returns the copy's Meta id. Needs the `publish` scope as well as `ads`. */
+    public suspend fun duplicateAdSet(
+        adSetId: String,
+        workspaceId: String,
+        connectionId: String,
+        paused: Boolean? = null,
+    ): String = duplicate("/ads/ad-sets/$adSetId", workspaceId, connectionId, paused)
+
+    /**
+     * An ad inside an ad set, unlike [create], which builds a whole campaign. Needs the `publish`
+     * scope as well as `ads`. Starts paused unless `paused` is `false`.
+     */
+    public suspend fun createNetworkAd(params: CreateNetworkAdParams): NetworkAd =
+        http.call("POST", "/ads/ads", NetworkAd.serializer(), http.jsonBody(params, CreateNetworkAdParams.serializer()))
+
+    /** [adId] is Meta's ad id. */
+    public suspend fun networkAd(adId: String, connectionId: String, workspaceId: String? = null): NetworkAd =
+        http.call("GET", "/ads/ads/$adId", NetworkAd.serializer(), query = connection(workspaceId, connectionId))
+
+    /** Needs the `publish` scope as well as `ads`. */
+    public suspend fun updateNetworkAd(
+        adId: String,
+        workspaceId: String,
+        connectionId: String,
+        params: UpdateNetworkAdParams,
+    ): NetworkAd =
+        http.call(
+            "PATCH",
+            "/ads/ads/$adId",
+            NetworkAd.serializer(),
+            http.jsonBody(params, UpdateNetworkAdParams.serializer()),
+            query = connection(workspaceId, connectionId),
+        )
+
+    /** Needs the `publish` scope as well as `ads`. */
+    public suspend fun deleteNetworkAd(adId: String, workspaceId: String, connectionId: String) {
+        http.send("DELETE", "/ads/ads/$adId", query = connection(workspaceId, connectionId))
+    }
+
+    /** Returns the copy's Meta id. Needs the `publish` scope as well as `ads`. */
+    public suspend fun duplicateNetworkAd(
+        adId: String,
+        workspaceId: String,
+        connectionId: String,
+        paused: Boolean? = null,
+    ): String = duplicate("/ads/ads/$adId", workspaceId, connectionId, paused)
+
+    /**
+     * Pause or resume campaigns, ad sets and ads in one call; each object reports on its own.
+     * Needs the `publish` scope as well as `ads`.
+     */
+    public suspend fun bulkSetStatus(params: BulkAdStatusParams): List<BulkAdStatusResult> =
+        http.callList(
+            "POST",
+            "/ads/status",
+            BulkAdStatusResult.serializer(),
+            http.jsonBody(params, BulkAdStatusParams.serializer()),
+        )
+
+    /** The creatives on one ad account. */
+    public suspend fun creatives(connectionId: String, adAccountId: String, workspaceId: String? = null): List<AdCreative> =
+        http.call(
+            "GET",
+            "/ads/creatives",
+            AdCreativesResult.serializer(),
+            query = connection(workspaceId, connectionId) + ("ad_account_id" to adAccountId),
+        ).creatives
+
+    /** An image, video or carousel creative. */
+    public suspend fun createCreative(params: CreateAdCreativeParams): AdCreative =
+        http.call(
+            "POST",
+            "/ads/creatives",
+            AdCreative.serializer(),
+            http.jsonBody(params, CreateAdCreativeParams.serializer()),
+        )
+
+    public suspend fun creative(creativeId: String, connectionId: String, workspaceId: String? = null): AdCreative =
+        http.call(
+            "GET",
+            "/ads/creatives/$creativeId",
+            AdCreative.serializer(),
+            query = connection(workspaceId, connectionId),
+        )
+
+    public suspend fun deleteCreative(creativeId: String, workspaceId: String, connectionId: String) {
+        http.send("DELETE", "/ads/creatives/$creativeId", query = connection(workspaceId, connectionId))
+    }
+
+    /** The audience size a targeting would reach. */
+    public suspend fun estimateReach(params: ReachEstimateParams): ReachEstimate =
+        http.call(
+            "POST",
+            "/ads/reach-estimate",
+            ReachEstimate.serializer(),
+            http.jsonBody(params, ReachEstimateParams.serializer()),
+        )
+
+    /**
+     * Insights for any campaign, ad set or ad on the ad account, by its Meta id. Dates are
+     * `YYYY-MM-DD`; [breakdown] is `age`, `gender`, `placement` or `country`; [daily] adds a timeline.
+     */
+    public suspend fun insights(
+        connectionId: String,
+        objectId: String,
+        since: String,
+        until: String,
+        breakdown: String? = null,
+        daily: Boolean? = null,
+        workspaceId: String? = null,
+    ): AdInsightsReport =
+        http.call(
+            "GET",
+            "/ads/insights",
+            AdInsightsReport.serializer(),
+            query = connection(workspaceId, connectionId) + mapOf(
+                "object_id" to objectId,
+                "since" to since,
+                "until" to until,
+                "breakdown" to breakdown,
+                "daily" to daily,
+            ),
+        )
+
+    /** Insights for a boost or ad created through FoPost, by its FoPost id. */
+    public suspend fun adInsights(
+        adId: String,
+        workspaceId: String,
+        since: String,
+        until: String,
+        breakdown: String? = null,
+        daily: Boolean? = null,
+    ): AdInsightsReport =
+        http.call(
+            "GET",
+            "/ads/$adId/insights",
+            AdInsightsReport.serializer(),
+            query = mapOf(
+                "workspace_id" to workspaceId,
+                "since" to since,
+                "until" to until,
+                "breakdown" to breakdown,
+                "daily" to daily,
+            ),
+        )
+
     /** The saved audiences and pixels on an ad account. */
     public suspend fun audiences(connectionId: String, adAccountId: String, workspaceId: String? = null): AudiencesResult =
         http.call(
@@ -120,6 +386,49 @@ public class AdsResource internal constructor(private val http: ApiClient) {
             CreatedAudience.serializer(),
             http.jsonBody(params, CreateAudienceParams.serializer()),
         )
+
+    public suspend fun audience(audienceId: String, connectionId: String, workspaceId: String? = null): Audience =
+        http.call(
+            "GET",
+            "/ads/audiences/$audienceId",
+            Audience.serializer(),
+            query = connection(workspaceId, connectionId),
+        )
+
+    public suspend fun updateAudience(
+        audienceId: String,
+        workspaceId: String,
+        connectionId: String,
+        params: UpdateAudienceParams,
+    ): Audience =
+        http.call(
+            "PATCH",
+            "/ads/audiences/$audienceId",
+            Audience.serializer(),
+            http.jsonBody(params, UpdateAudienceParams.serializer()),
+            query = connection(workspaceId, connectionId),
+        )
+
+    public suspend fun deleteAudience(audienceId: String, workspaceId: String, connectionId: String) {
+        http.send("DELETE", "/ads/audiences/$audienceId", query = connection(workspaceId, connectionId))
+    }
+
+    /** Add people to a custom audience; the emails are hashed before they leave the API. Returns the count sent. */
+    public suspend fun addAudienceUsers(
+        audienceId: String,
+        workspaceId: String,
+        connectionId: String,
+        emails: List<String>,
+    ): Int {
+        val data = http.call(
+            "POST",
+            "/ads/audiences/$audienceId/users",
+            JsonObject.serializer(),
+            http.jsonBody(AddAudienceUsersBody(emails), AddAudienceUsersBody.serializer()),
+            query = connection(workspaceId, connectionId),
+        )
+        return data["added"]?.jsonPrimitive?.intOrNull ?: 0
+    }
 
     /**
      * Locations, interests, behaviours and income brackets as Meta names them.
@@ -146,7 +455,12 @@ public class AdsResource internal constructor(private val http: ApiClient) {
 
     /** Every connection and Page with the Instant Forms on it. */
     public suspend fun leadForms(workspaceId: String? = null): List<LeadFormSource> =
-        http.callList("GET", "/ads/lead-forms", LeadFormSource.serializer(), query = mapOf("workspace_id" to workspaceId))
+        http.callList(
+            "GET",
+            "/ads/lead-forms",
+            LeadFormSource.serializer(),
+            query = mapOf("workspace_id" to workspaceId),
+        )
 
     /** Create an Instant Form on the Page. Returns its id. */
     public suspend fun createLeadForm(params: CreateLeadFormParams): String {
@@ -178,4 +492,86 @@ public class AdsResource internal constructor(private val http: ApiClient) {
                 "after" to after,
             ),
         )
+
+    public suspend fun leadForm(
+        formId: String,
+        connectionId: String,
+        pageId: String,
+        workspaceId: String? = null,
+    ): LeadFormDetail =
+        http.call(
+            "GET",
+            "/ads/lead-forms/$formId",
+            LeadFormDetail.serializer(),
+            query = connection(workspaceId, connectionId) + ("page_id" to pageId),
+        )
+
+    /** Stop the form taking new leads. Returns it as archived. */
+    public suspend fun archiveLeadForm(
+        formId: String,
+        workspaceId: String,
+        connectionId: String,
+        pageId: String,
+    ): LeadFormDetail =
+        http.call(
+            "POST",
+            "/ads/lead-forms/$formId/archive",
+            LeadFormDetail.serializer(),
+            http.jsonBody(LeadPageBody(workspaceId, connectionId, pageId), LeadPageBody.serializer()),
+        )
+
+    /**
+     * Leads stored from the subscribed Pages, newest first. Pass `nextCursor` back as [cursor] for
+     * the next page. [limit] is 1 to 100.
+     */
+    public suspend fun leadsFeed(
+        workspaceId: String? = null,
+        formId: String? = null,
+        pageId: String? = null,
+        cursor: String? = null,
+        limit: Int? = null,
+    ): LeadsFeed =
+        http.call(
+            "GET",
+            "/ads/leads",
+            LeadsFeed.serializer(),
+            query = mapOf(
+                "workspace_id" to workspaceId,
+                "form_id" to formId,
+                "page_id" to pageId,
+                "cursor" to cursor,
+                "limit" to limit,
+            ),
+        )
+
+    /** The Pages whose new leads FoPost stores as they arrive. */
+    public suspend fun leadPages(workspaceId: String? = null): List<LeadPage> =
+        http.callList("GET", "/ads/lead-pages", LeadPage.serializer(), query = mapOf("workspace_id" to workspaceId))
+
+    /** Start storing a Page's leads as they arrive; its existing leads are backfilled. */
+    public suspend fun subscribeLeadPage(workspaceId: String, connectionId: String, pageId: String): LeadPageSubscription =
+        http.call(
+            "POST",
+            "/ads/lead-pages",
+            LeadPageSubscription.serializer(),
+            http.jsonBody(LeadPageBody(workspaceId, connectionId, pageId), LeadPageBody.serializer()),
+        )
+
+    public suspend fun unsubscribeLeadPage(pageId: String, workspaceId: String, connectionId: String) {
+        http.send("DELETE", "/ads/lead-pages/$pageId", query = connection(workspaceId, connectionId))
+    }
+
+    private suspend fun duplicate(path: String, workspaceId: String, connectionId: String, paused: Boolean?): String {
+        val data = http.call(
+            "POST",
+            "$path/duplicate",
+            JsonObject.serializer(),
+            http.jsonBody(DuplicateAdObjectBody(paused), DuplicateAdObjectBody.serializer()),
+            query = connection(workspaceId, connectionId),
+        )
+        return data["id"]?.jsonPrimitive?.contentOrNull.orEmpty()
+    }
+
+    private fun connection(workspaceId: String?, connectionId: String): Map<String, Any?> =
+        mapOf("workspace_id" to workspaceId, "connection_id" to connectionId)
 }

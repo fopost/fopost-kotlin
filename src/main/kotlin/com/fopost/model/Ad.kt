@@ -223,3 +223,227 @@ public data class LeadsPage(
     val leads: List<Lead> = emptyList(),
     @SerialName("next_cursor") @JsonNames("nextCursor") val nextCursor: String? = null,
 )
+
+/** A campaign on a Meta ad account, read live. [status] is `ACTIVE`, `PAUSED`, `DELETED` or `ARCHIVED`. */
+@Serializable
+public data class AdCampaign(
+    val id: String? = null,
+    val name: String? = null,
+    val status: String? = null,
+    @SerialName("effective_status") @JsonNames("effectiveStatus") val effectiveStatus: String? = null,
+    val objective: String? = null,
+    /** Null when the budget lives on the ad sets. */
+    @SerialName("budget_minor") @JsonNames("budgetMinor") val budgetMinor: Long? = null,
+    @SerialName("budget_type") @JsonNames("budgetType") val budgetType: String? = null,
+    @SerialName("created_at") @JsonNames("createdAt") val createdAt: String? = null,
+)
+
+/** An ad set on a Meta ad account, read live. [budgetType] is `daily` or `lifetime`. */
+@Serializable
+public data class AdSet(
+    val id: String? = null,
+    val name: String? = null,
+    @SerialName("campaign_id") @JsonNames("campaignId") val campaignId: String? = null,
+    val status: String? = null,
+    @SerialName("effective_status") @JsonNames("effectiveStatus") val effectiveStatus: String? = null,
+    @SerialName("budget_minor") @JsonNames("budgetMinor") val budgetMinor: Long? = null,
+    @SerialName("budget_type") @JsonNames("budgetType") val budgetType: String? = null,
+    @SerialName("end_at") @JsonNames("endAt") val endAt: String? = null,
+    @SerialName("optimization_goal") @JsonNames("optimizationGoal") val optimizationGoal: String? = null,
+    @SerialName("created_at") @JsonNames("createdAt") val createdAt: String? = null,
+)
+
+/** An ad inside an ad set on a Meta ad account, read live. */
+@Serializable
+public data class NetworkAd(
+    val id: String? = null,
+    val name: String? = null,
+    @SerialName("campaign_id") @JsonNames("campaignId") val campaignId: String? = null,
+    @SerialName("ad_set_id") @JsonNames("adSetId") val adSetId: String? = null,
+    @SerialName("creative_id") @JsonNames("creativeId") val creativeId: String? = null,
+    val status: String? = null,
+    @SerialName("effective_status") @JsonNames("effectiveStatus") val effectiveStatus: String? = null,
+    @SerialName("created_at") @JsonNames("createdAt") val createdAt: String? = null,
+)
+
+/** An ad set in an [AdAccountTree], with its ads. */
+@Serializable
+public data class AdSetNode(
+    val id: String? = null,
+    val name: String? = null,
+    @SerialName("campaign_id") @JsonNames("campaignId") val campaignId: String? = null,
+    val status: String? = null,
+    @SerialName("effective_status") @JsonNames("effectiveStatus") val effectiveStatus: String? = null,
+    @SerialName("budget_minor") @JsonNames("budgetMinor") val budgetMinor: Long? = null,
+    @SerialName("budget_type") @JsonNames("budgetType") val budgetType: String? = null,
+    @SerialName("end_at") @JsonNames("endAt") val endAt: String? = null,
+    @SerialName("optimization_goal") @JsonNames("optimizationGoal") val optimizationGoal: String? = null,
+    @SerialName("created_at") @JsonNames("createdAt") val createdAt: String? = null,
+    val ads: List<NetworkAd> = emptyList(),
+)
+
+/** A campaign in an [AdAccountTree], with its ad sets. */
+@Serializable
+public data class CampaignNode(
+    val id: String? = null,
+    val name: String? = null,
+    val status: String? = null,
+    @SerialName("effective_status") @JsonNames("effectiveStatus") val effectiveStatus: String? = null,
+    val objective: String? = null,
+    @SerialName("budget_minor") @JsonNames("budgetMinor") val budgetMinor: Long? = null,
+    @SerialName("budget_type") @JsonNames("budgetType") val budgetType: String? = null,
+    @SerialName("created_at") @JsonNames("createdAt") val createdAt: String? = null,
+    @SerialName("ad_sets") @JsonNames("adSets") val adSets: List<AdSetNode> = emptyList(),
+)
+
+/** Every campaign on an ad account, with its ad sets and their ads. */
+@Serializable
+public data class AdAccountTree(
+    @SerialName("ad_account_id") @JsonNames("adAccountId") val adAccountId: String? = null,
+    val currency: String? = null,
+    @SerialName("workspace_id") @JsonNames("workspaceId") val workspaceId: String? = null,
+    val campaigns: List<CampaignNode> = emptyList(),
+)
+
+/** The outcome for one object of a bulk status change. [error] is null when it worked. */
+@Serializable
+public data class BulkAdStatusResult(
+    val id: String? = null,
+    /** `campaign`, `ad_set` or `ad`. */
+    val level: String? = null,
+    val ok: Boolean? = null,
+    val error: String? = null,
+)
+
+/** A creative on a Meta ad account. [format] is `image`, `video`, `carousel`, `post` or `other`. */
+@Serializable
+public data class AdCreative(
+    val id: String? = null,
+    val name: String? = null,
+    val format: String? = null,
+    val status: String? = null,
+    val title: String? = null,
+    val body: String? = null,
+    val link: String? = null,
+    @SerialName("thumbnail_url") @JsonNames("thumbnailUrl") val thumbnailUrl: String? = null,
+    @SerialName("call_to_action") @JsonNames("callToAction") val callToAction: String? = null,
+    @SerialName("url_tags") @JsonNames("urlTags") val urlTags: String? = null,
+)
+
+/** The creatives on an ad account. */
+@Serializable
+internal data class AdCreativesResult(
+    val creatives: List<AdCreative> = emptyList(),
+)
+
+/** The audience size range for a targeting. [ready] is false while Meta is still sizing it. */
+@Serializable
+public data class ReachEstimate(
+    val lower: Long? = null,
+    val upper: Long? = null,
+    val ready: Boolean? = null,
+)
+
+/** Delivery numbers. [spendMinor] is in the account currency, minor units; [ctr] is a percentage. */
+@Serializable
+public data class InsightsMetrics(
+    val impressions: Long? = null,
+    val reach: Long? = null,
+    val clicks: Long? = null,
+    @SerialName("spend_minor") @JsonNames("spendMinor") val spendMinor: Long? = null,
+    val ctr: Double? = null,
+    val leads: Long? = null,
+)
+
+/** One row of an insights breakdown, keyed by age band, gender, placement or country. */
+@Serializable
+public data class InsightsBreakdownRow(
+    val key: String? = null,
+    val metrics: InsightsMetrics? = null,
+)
+
+/** One day of an insights timeline. */
+@Serializable
+public data class InsightsTimelineRow(
+    val date: String? = null,
+    val metrics: InsightsMetrics? = null,
+)
+
+/**
+ * Delivery numbers for one object over a date range. [breakdown] is filled when a breakdown was
+ * asked for, [timeline] when daily numbers were; [totals] is null without data.
+ */
+@Serializable
+public data class AdInsightsReport(
+    @SerialName("object_id") @JsonNames("objectId") val objectId: String? = null,
+    val currency: String? = null,
+    val since: String? = null,
+    val until: String? = null,
+    @SerialName("breakdown_by") @JsonNames("breakdownBy") val breakdownBy: String? = null,
+    val totals: InsightsMetrics? = null,
+    val breakdown: List<InsightsBreakdownRow> = emptyList(),
+    val timeline: List<InsightsTimelineRow> = emptyList(),
+)
+
+/** An Instant Form with its Page, privacy policy and locale. */
+@Serializable
+public data class LeadFormDetail(
+    val id: String? = null,
+    val name: String? = null,
+    val status: String? = null,
+    @SerialName("leads_count") @JsonNames("leadsCount") val leadsCount: Int? = null,
+    @SerialName("created_at") @JsonNames("createdAt") val createdAt: String? = null,
+    val questions: List<String> = emptyList(),
+    @SerialName("page_id") @JsonNames("pageId") val pageId: String? = null,
+    @SerialName("privacy_policy_url") @JsonNames("privacyPolicyUrl") val privacyPolicyUrl: String? = null,
+    val locale: String? = null,
+)
+
+/** One answer on a stored lead. */
+@Serializable
+public data class LeadField(
+    val name: String? = null,
+    val values: List<String> = emptyList(),
+)
+
+/** A lead stored from a subscribed Page. [leadId] is Meta's id. */
+@Serializable
+public data class FeedLead(
+    val id: String? = null,
+    @SerialName("lead_id") @JsonNames("leadId") val leadId: String? = null,
+    @SerialName("connection_id") @JsonNames("connectionId") val connectionId: String? = null,
+    @SerialName("page_id") @JsonNames("pageId") val pageId: String? = null,
+    @SerialName("form_id") @JsonNames("formId") val formId: String? = null,
+    @SerialName("ad_id") @JsonNames("adId") val adId: String? = null,
+    @SerialName("ad_name") @JsonNames("adName") val adName: String? = null,
+    @SerialName("campaign_name") @JsonNames("campaignName") val campaignName: String? = null,
+    val platform: String? = null,
+    @SerialName("is_organic") @JsonNames("isOrganic") val isOrganic: Boolean? = null,
+    val fields: List<LeadField> = emptyList(),
+    @SerialName("submitted_at") @JsonNames("submittedAt") val submittedAt: Instant? = null,
+    @SerialName("workspace_id") @JsonNames("workspaceId") val workspaceId: String? = null,
+)
+
+/** One page of the leads feed. Pass [nextCursor] back as `cursor`; null means the end. */
+@Serializable
+public data class LeadsFeed(
+    val leads: List<FeedLead> = emptyList(),
+    @SerialName("next_cursor") @JsonNames("nextCursor") val nextCursor: String? = null,
+)
+
+/** A Page whose new leads FoPost stores as they arrive. */
+@Serializable
+public data class LeadPage(
+    @SerialName("connection_id") @JsonNames("connectionId") val connectionId: String? = null,
+    @SerialName("page_id") @JsonNames("pageId") val pageId: String? = null,
+    @SerialName("page_name") @JsonNames("pageName") val pageName: String? = null,
+    @SerialName("created_at") @JsonNames("createdAt") val createdAt: Instant? = null,
+    @SerialName("workspace_id") @JsonNames("workspaceId") val workspaceId: String? = null,
+)
+
+/** A new lead Page subscription. [backfilled] counts the existing leads stored with it. */
+@Serializable
+public data class LeadPageSubscription(
+    @SerialName("page_id") @JsonNames("pageId") val pageId: String? = null,
+    val backfilled: Int? = null,
+)
