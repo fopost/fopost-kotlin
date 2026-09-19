@@ -12,7 +12,7 @@ import kotlinx.serialization.json.JsonNames
 /** Pagination counters returned alongside a page of results. */
 @Serializable
 public data class PageMeta(
-    @SerialName("current_page") @JsonNames("currentPage") val currentPage: Int? = null,
+    @SerialName("current_page") @JsonNames("currentPage", "page") val currentPage: Int? = null,
     @SerialName("per_page") @JsonNames("perPage") val perPage: Int? = null,
     val total: Int? = null,
     @SerialName("last_page") @JsonNames("lastPage") val lastPage: Int? = null,

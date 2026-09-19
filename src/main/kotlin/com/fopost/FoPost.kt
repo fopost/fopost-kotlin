@@ -4,9 +4,11 @@ import com.fopost.internal.ApiClient
 import com.fopost.internal.SDK_VERSION
 import com.fopost.internal.defaultJson
 import com.fopost.resource.AccountsResource
+import com.fopost.resource.AdsResource
 import com.fopost.resource.AnalyticsResource
 import com.fopost.resource.AutomationsResource
 import com.fopost.resource.CommunitiesResource
+import com.fopost.resource.InboxResource
 import com.fopost.resource.LabelsResource
 import com.fopost.resource.MediaResource
 import com.fopost.resource.PostsResource
@@ -109,6 +111,8 @@ public class FoPost @JvmOverloads constructor(
     public val analytics: AnalyticsResource = AnalyticsResource(api)
     public val automations: AutomationsResource = AutomationsResource(api)
     public val media: MediaResource = MediaResource(api)
+    public val inbox: InboxResource = InboxResource(api)
+    public val ads: AdsResource = AdsResource(api)
 
     /**
      * Call an endpoint this SDK does not wrap yet, authenticated and retried like any other call.
