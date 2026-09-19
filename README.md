@@ -166,6 +166,7 @@ client.posts.listAll(PostListParams(workspaceId = workspaceId))
 | `media`       | `list`, `upload`, `delete`                                                                                                                                                                                                                                       |
 | `inbox`       | `list`, `threads`, `conversations`, `unreadCount`, `accounts`, `platforms`, `markThreadRead`, `refresh`, `update`, `reply`, `hide`, `unhide`, `delete`, `listApprovals`, `approveReply`, `rejectReply`                                                        |
 | `ads`         | `list`, `external`, `boostable`, `connections`, `sources`, `authorizeMeta`, `deleteConnection`, `boost`, `create`, `refresh`, `setStatus`, `delete`, `audiences`, `createAudience`, `searchTargeting`, `leadForms`, `createLeadForm`, `leads`                    |
+| `validate`    | `post`, `length`, `media`                                                                                                                                                                                                                                        |
 
 For an endpoint the SDK does not wrap yet, `request` sends an authenticated call and hands back
 the raw body; `requestAs` decodes the `data` payload into a type of yours:
@@ -189,6 +190,25 @@ client.posts.create(
         content = listOf(ContentBlockInput("Numbers are in", media = listOf(file.toMediaItem()))),
     ),
 )
+```
+
+## Validation
+
+Check a draft, a text or a file against platform rules before it exists as a post. Nothing is
+stored, and every method needs the `posts` scope.
+
+```kotlin
+val verdict = client.validate.post(
+    ValidatePostParams(
+        platforms = listOf("twitter", "linkedin"),
+        content = "Numbers are in",
+        media = listOf(ValidateMediaInput("https://example.com/chart.png", "image/png")),
+    ),
+)
+verdict.platforms.filterNot { it.ready == true }.forEach { println("${it.platform}: ${it.issues}") }
+
+val lengths = client.validate.length(ValidateLengthParams("A long caption…", listOf("twitter")))
+val file = client.validate.media("https://example.com/chart.png")
 ```
 
 ## Webhooks
