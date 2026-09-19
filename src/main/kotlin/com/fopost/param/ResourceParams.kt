@@ -80,6 +80,14 @@ public data class SetAccountGroupMembersParams(
     @kotlinx.serialization.SerialName("account_ids") val accountIds: List<String>,
 )
 
+/** The workspace a Telegram connect code is minted for; omit it for a key bound to one workspace. */
+@Serializable
+public data class CreateTelegramConnectCodeParams(val workspaceId: String? = null)
+
+/** The full command menu for a Telegram chat, 1-100 commands. */
+@Serializable
+public data class SetTelegramBotCommandsParams(val commands: List<com.fopost.model.TelegramBotCommand>)
+
 /** A webhook being registered. Events come from [com.fopost.model.WebhookEvents]. */
 @Serializable
 public data class CreateWebhookParams(

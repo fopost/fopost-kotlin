@@ -6,9 +6,15 @@ import com.fopost.model.AccountAnalyticsHistory
 import com.fopost.model.AccountHealth
 import com.fopost.model.AccountValidation
 import com.fopost.model.AccountsHealthSummary
+import com.fopost.model.TelegramBotCommand
+import com.fopost.model.TelegramBotCommands
+import com.fopost.model.TelegramConnectCode
+import com.fopost.model.TelegramConnectStatus
 import com.fopost.model.TokenRefresh
 import com.fopost.param.CreateAccountParams
+import com.fopost.param.CreateTelegramConnectCodeParams
 import com.fopost.param.MoveAccountParams
+import com.fopost.param.SetTelegramBotCommandsParams
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.buildJsonObject
@@ -109,4 +115,45 @@ public class AccountsResource internal constructor(private val http: ApiClient) 
             AccountAnalyticsHistory.serializer(),
             query = mapOf("limit" to limit),
         )
+
+    /**
+     * Mint a one-time code, valid for 15 minutes. Sending `/connect <code>` to the bot in a Telegram
+     * chat connects that chat. [workspaceId] may be omitted for a key bound to one workspace.
+     */
+    public suspend fun createTelegramConnectCode(workspaceId: String? = null): TelegramConnectCode =
+        http.call(
+            "POST",
+            "/accounts/telegram/connect-code",
+            TelegramConnectCode.serializer(),
+            http.jsonBody(CreateTelegramConnectCodeParams(workspaceId), CreateTelegramConnectCodeParams.serializer()),
+        )
+
+    /** Whether a connect code has been used yet, and the account it connected. */
+    public suspend fun getTelegramConnectStatus(code: String): TelegramConnectStatus =
+        http.call(
+            "GET",
+            "/accounts/telegram/connect-code/status",
+            TelegramConnectStatus.serializer(),
+            query = mapOf("code" to code),
+        )
+
+    /** The command menu the bot shows in this Telegram chat. */
+    public suspend fun getTelegramBotCommands(accountId: String): TelegramBotCommands =
+        http.call("GET", "/accounts/$accountId/telegram/commands", TelegramBotCommands.serializer())
+
+    /** Replace the command menu for this Telegram chat, 1-100 commands. */
+    public suspend fun setTelegramBotCommands(
+        accountId: String,
+        commands: List<TelegramBotCommand>,
+    ): TelegramBotCommands =
+        http.call(
+            "PUT",
+            "/accounts/$accountId/telegram/commands",
+            TelegramBotCommands.serializer(),
+            http.jsonBody(SetTelegramBotCommandsParams(commands), SetTelegramBotCommandsParams.serializer()),
+        )
+
+    /** Clear the command menu for this Telegram chat. */
+    public suspend fun deleteTelegramBotCommands(accountId: String): TelegramBotCommands =
+        http.call("DELETE", "/accounts/$accountId/telegram/commands", TelegramBotCommands.serializer())
 }
