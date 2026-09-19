@@ -30,12 +30,13 @@ public fun contentOf(vararg text: String): List<ContentBlockInput> = text.map { 
  * A post to create.
  *
  * [status] is `draft` or `scheduled`, and a scheduled post needs [scheduleAt]. To send something
- * out now, create it and call `posts.publish(id)`.
+ * out now, create it and call `posts.publish(id)`. [accountGroupId] adds every account in that
+ * group, merged with [accounts], so [accounts] may stay empty.
  */
 @Serializable
 public data class CreatePostParams(
     @SerialName("workspace_id") val workspaceId: String,
-    val accounts: List<String>,
+    val accounts: List<String> = emptyList(),
     val content: List<ContentBlockInput>,
     val status: String = PostStatus.DRAFT,
     @SerialName("content_type") val contentType: String? = null,
@@ -54,6 +55,7 @@ public data class CreatePostParams(
     val settings: JsonObject? = null,
     @SerialName("source_ids") val sourceIds: List<String>? = null,
     @SerialName("companion_of") val companionOf: String? = null,
+    @SerialName("account_group_id") val accountGroupId: String? = null,
 ) {
     /** The same post, scheduled instead of held as a draft. */
     public fun scheduledAt(at: Instant): CreatePostParams =

@@ -3,6 +3,7 @@ package com.fopost
 import com.fopost.internal.ApiClient
 import com.fopost.internal.SDK_VERSION
 import com.fopost.internal.defaultJson
+import com.fopost.resource.AccountGroupsResource
 import com.fopost.resource.AccountsResource
 import com.fopost.resource.AdsResource
 import com.fopost.resource.AnalyticsResource
@@ -106,6 +107,7 @@ public class FoPost @JvmOverloads constructor(
     public val posts: PostsResource = PostsResource(api)
     public val workspaces: WorkspacesResource = WorkspacesResource(api)
     public val accounts: AccountsResource = AccountsResource(api)
+    public val accountGroups: AccountGroupsResource = AccountGroupsResource(api)
     public val communities: CommunitiesResource = CommunitiesResource(api)
     public val labels: LabelsResource = LabelsResource(api)
     public val webhooks: WebhooksResource = WebhooksResource(api)

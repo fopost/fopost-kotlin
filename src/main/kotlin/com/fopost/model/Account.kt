@@ -14,7 +14,8 @@ import kotlinx.serialization.json.JsonNames
  *
  * Named for the platform account, not the billing account. Which fields arrive depends on the
  * endpoint: the list gives health and primary state, the detail gives timestamps and the
- * owning workspace.
+ * owning workspace. [name] is the display name when one is set; [platformName] is always the
+ * name from the platform.
  */
 @Serializable
 public data class Account(
@@ -31,6 +32,7 @@ public data class Account(
     val workspace: WorkspaceRef? = null,
     @SerialName("created_at") @JsonNames("createdAt") val createdAt: Instant? = null,
     @SerialName("updated_at") @JsonNames("updatedAt") val updatedAt: Instant? = null,
+    @SerialName("platform_name") @JsonNames("platformName") val platformName: String? = null,
 )
 
 /** Token validity for one account. `healthStatus` is healthy, degraded, expired, revoked or unknown. */

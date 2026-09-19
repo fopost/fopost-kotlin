@@ -58,6 +58,28 @@ public data class CreateLabelParams(
 @Serializable
 public data class UpdateLabelParams(val name: String, val color: String)
 
+/** The workspace an account is moving to. */
+@Serializable
+public data class MoveAccountParams(@kotlinx.serialization.SerialName("workspace_id") val workspaceId: String)
+
+/** An account group being created. */
+@Serializable
+public data class CreateAccountGroupParams(
+    @kotlinx.serialization.SerialName("workspace_id") val workspaceId: String,
+    val name: String,
+    @kotlinx.serialization.SerialName("account_ids") val accountIds: List<String>? = null,
+)
+
+/** An account group being renamed. */
+@Serializable
+public data class UpdateAccountGroupParams(val name: String)
+
+/** The full member list for an account group. */
+@Serializable
+public data class SetAccountGroupMembersParams(
+    @kotlinx.serialization.SerialName("account_ids") val accountIds: List<String>,
+)
+
 /** A webhook being registered. Events come from [com.fopost.model.WebhookEvents]. */
 @Serializable
 public data class CreateWebhookParams(
