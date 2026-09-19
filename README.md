@@ -164,6 +164,8 @@ client.posts.listAll(PostListParams(workspaceId = workspaceId))
 | `analytics`   | `overview`, `timeSeries`, `topPosts`, `labels`, `postsTable`, `postingStreak`, `demographics`, `collect`                                                                                                                                                          |
 | `automations` | `list`, `get`, `create`, `update`, `delete`, `toggle`, `runs`, `run`, `trigger`, `stats`                                                                                                                                                                          |
 | `media`       | `list`, `upload`, `delete`                                                                                                                                                                                                                                       |
+| `inbox`       | `list`, `threads`, `conversations`, `unreadCount`, `accounts`, `platforms`, `markThreadRead`, `refresh`, `update`, `reply`, `hide`, `unhide`, `delete`, `listApprovals`, `approveReply`, `rejectReply`                                                        |
+| `ads`         | `list`, `external`, `boostable`, `connections`, `sources`, `authorizeMeta`, `deleteConnection`, `boost`, `create`, `refresh`, `setStatus`, `delete`, `audiences`, `createAudience`, `searchTargeting`, `leadForms`, `createLeadForm`, `leads`                    |
 
 For an endpoint the SDK does not wrap yet, `request` sends an authenticated call and hands back
 the raw body; `requestAs` decodes the `data` payload into a type of yours:
@@ -265,7 +267,9 @@ try {
 
 An API key carries only the scopes granted when it was created, and every request is confined to
 the workspaces that key can reach. `posts` also covers publishing, deliveries, and media; the rest
-are `workspaces`, `accounts`, `labels`, `webhooks`, `analytics`, and `automations`.
+are `workspaces`, `accounts`, `labels`, `webhooks`, `analytics`, `automations`, `inbox`, and `ads`.
+`ads.boost`, `ads.create`, `ads.setStatus` and `ads.delete` spend money and need `publish` as well
+as `ads`; a boost or ad starts paused unless `paused` is `false`.
 
 ## Example
 

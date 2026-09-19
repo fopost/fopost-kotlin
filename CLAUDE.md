@@ -6,7 +6,8 @@ Guidance for Claude Code (claude.ai/code) when working in this repository.
 
 `com.fopost:fopost-kotlin` — the official Kotlin SDK for the FoPost REST API, published to Maven
 Central. It wraps `https://api.fopost.com/v1`: posts, workspaces, accounts, communities, labels,
-webhooks, analytics, automations, and media. The public API is `suspend` functions on coroutines;
+webhooks, analytics, automations, media, inbox, and ads. Not wrapped: `/inbox/chat/*` (browser-
+encrypted X Chat) and `/inbox/{id}/attachments/{index}` (a binary stream). The public API is `suspend` functions on coroutines;
 transport is OkHttp and JSON is kotlinx-serialization.
 
 Sibling SDKs wrap the same API and are the reference for behaviour: `fopost-go` has the widest
