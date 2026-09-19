@@ -163,7 +163,7 @@ client.posts.listAll(PostListParams(workspaceId = workspaceId))
 | `webhooks`    | `list`, `create`, `update`, `delete`, `test`                                                                                                                                                                                                                      |
 | `analytics`   | `overview`, `timeSeries`, `topPosts`, `labels`, `postsTable`, `postingStreak`, `demographics`, `collect`                                                                                                                                                          |
 | `automations` | `list`, `get`, `create`, `update`, `delete`, `toggle`, `runs`, `run`, `trigger`, `stats`                                                                                                                                                                          |
-| `media`       | `list`, `upload`, `delete`                                                                                                                                                                                                                                       |
+| `media`       | `list`, `upload`, `presign`, `complete`, `uploadDirect`, `delete`                                                                                                                                                                                                |
 | `inbox`       | `list`, `threads`, `conversations`, `unreadCount`, `accounts`, `platforms`, `markThreadRead`, `refresh`, `update`, `reply`, `hide`, `unhide`, `delete`, `listApprovals`, `approveReply`, `rejectReply`                                                        |
 | `ads`         | `list`, `external`, `boostable`, `connections`, `sources`, `authorizeMeta`, `deleteConnection`, `boost`, `create`, `refresh`, `setStatus`, `delete`, `audiences`, `createAudience`, `searchTargeting`, `leadForms`, `createLeadForm`, `leads`                    |
 | `validate`    | `post`, `length`, `media`                                                                                                                                                                                                                                        |
@@ -190,6 +190,14 @@ client.posts.create(
         content = listOf(ContentBlockInput("Numbers are in", media = listOf(file.toMediaItem()))),
     ),
 )
+```
+
+For a large file, a direct upload sends the bytes straight to storage instead of through the
+API. `uploadDirect` presigns, PUTs the bytes, and completes in one call; `presign` and `complete`
+are the two halves for when you PUT the bytes yourself:
+
+```kotlin
+val file = client.media.uploadDirect("ws_1", "clip.mp4", "video/mp4", File("clip.mp4").readBytes())
 ```
 
 ## Validation

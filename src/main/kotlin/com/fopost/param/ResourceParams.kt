@@ -139,3 +139,12 @@ public data class AnalyticsParams(
         "audience" to audience,
     )
 }
+
+/** A direct upload being reserved. `size` is the exact byte count that will be PUT. */
+@Serializable
+public data class PresignUploadParams(
+    val workspaceId: String,
+    val filename: String,
+    val mimeType: String,
+    val size: Long,
+)
