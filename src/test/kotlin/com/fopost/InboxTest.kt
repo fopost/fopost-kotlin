@@ -2,12 +2,15 @@ package com.fopost
 
 import com.fopost.param.InboxListParams
 import com.fopost.param.MarkInboxReadParams
+import com.fopost.param.StartInboxConversationParams
 import com.fopost.param.UpdateInboxItemParams
 import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.mockwebserver.MockWebServer
@@ -129,5 +132,93 @@ class InboxTest {
         val approve = server.takeRequest()
         assertEquals("/v1/inbox/approvals/42/approve", approve.path)
         assertEquals("Thanks, Sam!", Json.parseToJsonElement(approve.body.readUtf8()).jsonObject["text"]!!.jsonPrimitive.content)
+    }
+
+    @Test
+    fun `likes, pins, reacts and edits a comment`() = runTest {
+        server.enqueue(
+            json(
+                200,
+                """
+                {"data":{"id":"ib_1","liked":true,"pinned":false,"reaction":null,"editedAt":null,
+                  "canLike":true,"canPin":false,"canEdit":false,"canReact":false,"canSendMedia":false,
+                  "canQuickReply":false,"canPrivateReply":true,"canDelete":true}}
+                """.trimIndent(),
+            ),
+        )
+        server.enqueue(json(200, """{"data":{"id":"ib_2","pinned":true}}"""))
+        server.enqueue(json(200, """{"data":{"id":"ib_3","reaction":null}}"""))
+        server.enqueue(json(200, """{"data":{"id":"ib_2","text":"Fixed typo","editedAt":"2026-09-01T12:00:00Z"}}"""))
+
+        server.client().use { client ->
+            val liked = client.inbox.like("ib_1")
+            assertEquals(true, liked.liked)
+            assertEquals(true, liked.canLike)
+            assertEquals(true, liked.canPrivateReply)
+            assertEquals(false, liked.canSendMedia)
+
+            assertEquals(true, client.inbox.pin("ib_2").pinned)
+            assertNull(client.inbox.react("ib_3", null).reaction)
+
+            val edited = client.inbox.editComment("ib_2", "Fixed typo")
+            assertEquals(Instant.parse("2026-09-01T12:00:00Z"), edited.editedAt)
+        }
+
+        val like = server.takeRequest()
+        assertEquals("POST", like.method)
+        assertEquals("/v1/inbox/ib_1/like", like.path)
+
+        assertEquals("/v1/inbox/ib_2/pin", server.takeRequest().path)
+
+        val react = server.takeRequest()
+        assertEquals("/v1/inbox/ib_3/react", react.path)
+        assertEquals(JsonNull, Json.parseToJsonElement(react.body.readUtf8()).jsonObject["reaction"])
+
+        val edit = server.takeRequest()
+        assertEquals("PATCH", edit.method)
+        assertEquals("/v1/inbox/ib_2", edit.path)
+        assertEquals("""{"text":"Fixed typo"}""", edit.body.readUtf8())
+    }
+
+    @Test
+    fun `replies with media, starts a conversation and sets typing`() = runTest {
+        server.enqueue(json(200, """{"data":{"item":{"id":"ib_1"},"reply":{"externalId":"m_1"}}}"""))
+        server.enqueue(json(201, """{"data":{"conversationId":"t_9","item":{"id":"ib_9","type":"dm","direction":"outbound"}}}"""))
+        server.enqueue(json(200, """{"data":{"typing":true}}"""))
+
+        server.client().use { client ->
+            client.inbox.reply("ib_1", mediaIds = listOf("med_1"), quickReplies = listOf("Yes", "No"))
+
+            val started = client.inbox.startConversation(
+                StartInboxConversationParams(text = "Thanks for the comment!", commentId = "ib_1"),
+            )
+            assertEquals("t_9", started.conversationId)
+            assertEquals("outbound", started.item?.direction)
+
+            assertEquals(true, client.inbox.setTyping("t_9", accountId = "acc_1"))
+        }
+
+        val reply = server.takeRequest().body.readUtf8().let { Json.parseToJsonElement(it).jsonObject }
+        assertNull(reply["text"])
+        assertEquals("med_1", reply["media_ids"]!!.jsonArray.single().jsonPrimitive.content)
+        assertEquals(2, reply["quick_replies"]!!.jsonArray.size)
+
+        val start = server.takeRequest()
+        assertEquals("POST", start.method)
+        assertEquals("/v1/inbox/conversations", start.path)
+        assertEquals("""{"text":"Thanks for the comment!","comment_id":"ib_1"}""", start.body.readUtf8())
+
+        val typing = server.takeRequest()
+        assertEquals("/v1/inbox/conversations/t_9/typing", typing.path)
+        assertEquals("""{"account_id":"acc_1"}""", typing.body.readUtf8())
+    }
+
+    @Test
+    fun `reads canStartConversation on inbox accounts`() = runTest {
+        server.enqueue(json(200, """{"data":[{"id":"acc_1","platform":"x","canStartConversation":true}]}"""))
+
+        val accounts = server.client().use { client -> client.inbox.accounts("ws_1") }
+
+        assertEquals(true, accounts.single().canStartConversation)
     }
 }

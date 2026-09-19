@@ -77,8 +77,24 @@ public data class InboxItem(
     @SerialName("created_at") @JsonNames("createdAt") val createdAt: Instant? = null,
     @SerialName("can_reply") @JsonNames("canReply") val canReply: Boolean? = null,
     val hidden: Boolean? = null,
+    val liked: Boolean? = null,
+    val pinned: Boolean? = null,
+    /** Our reaction on a DM. */
+    val reaction: String? = null,
+    @SerialName("edited_at") @JsonNames("editedAt") val editedAt: Instant? = null,
     @SerialName("can_hide") @JsonNames("canHide") val canHide: Boolean? = null,
+    /** A comment someone left, or our own reply. */
     @SerialName("can_delete") @JsonNames("canDelete") val canDelete: Boolean? = null,
+    @SerialName("can_like") @JsonNames("canLike") val canLike: Boolean? = null,
+    /** Our own comment only. */
+    @SerialName("can_pin") @JsonNames("canPin") val canPin: Boolean? = null,
+    /** Our own comment only. */
+    @SerialName("can_edit") @JsonNames("canEdit") val canEdit: Boolean? = null,
+    @SerialName("can_react") @JsonNames("canReact") val canReact: Boolean? = null,
+    @SerialName("can_send_media") @JsonNames("canSendMedia") val canSendMedia: Boolean? = null,
+    @SerialName("can_quick_reply") @JsonNames("canQuickReply") val canQuickReply: Boolean? = null,
+    /** A DM can be opened with [com.fopost.resource.InboxResource.startConversation] and `commentId`. */
+    @SerialName("can_private_reply") @JsonNames("canPrivateReply") val canPrivateReply: Boolean? = null,
     val post: JsonObject? = null,
     @SerialName("post_context") @JsonNames("postContext") val postContext: InboxPostContext? = null,
     val account: InboxAccountRef? = null,
@@ -135,6 +151,8 @@ public data class InboxAccount(
     @SerialName("pending_reason") @JsonNames("pendingReason") val pendingReason: String? = null,
     @SerialName("dm_supported") @JsonNames("dmSupported") val dmSupported: Boolean? = null,
     @SerialName("dm_pending_reason") @JsonNames("dmPendingReason") val dmPendingReason: String? = null,
+    /** A new DM can be opened from this account by handle. */
+    @SerialName("can_start_conversation") @JsonNames("canStartConversation") val canStartConversation: Boolean? = null,
 )
 
 /** Inbox support per platform. [comments] and [dms] are `live`, `soon` or `none`. */
@@ -175,6 +193,13 @@ public data class InboxReplyRef(
 public data class InboxReplyResult(
     val item: InboxItem? = null,
     val reply: InboxReplyRef? = null,
+)
+
+/** A DM that was sent to open a conversation. */
+@Serializable
+public data class InboxConversationStart(
+    @SerialName("conversation_id") @JsonNames("conversationId") val conversationId: String? = null,
+    val item: InboxItem? = null,
 )
 
 /** What a manual inbox refresh did. */
