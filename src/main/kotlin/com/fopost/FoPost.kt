@@ -12,6 +12,7 @@ import com.fopost.resource.InboxResource
 import com.fopost.resource.LabelsResource
 import com.fopost.resource.MediaResource
 import com.fopost.resource.PostsResource
+import com.fopost.resource.ValidateResource
 import com.fopost.resource.WebhooksResource
 import com.fopost.resource.WorkspacesResource
 import java.io.Closeable
@@ -113,6 +114,7 @@ public class FoPost @JvmOverloads constructor(
     public val media: MediaResource = MediaResource(api)
     public val inbox: InboxResource = InboxResource(api)
     public val ads: AdsResource = AdsResource(api)
+    public val validate: ValidateResource = ValidateResource(api)
 
     /**
      * Call an endpoint this SDK does not wrap yet, authenticated and retried like any other call.
