@@ -32,6 +32,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
@@ -143,6 +144,30 @@ internal class ApiClient(
             ?: emptyList()
         val meta = (element["meta"] as? JsonObject)?.let { decode(PageMeta.serializer(), it) }
         return Page(items, meta)
+    }
+
+    /** A raw PUT to a presigned URL: no API key, no envelope, no retry. */
+    suspend fun putRaw(url: String, headers: Map<String, String>, content: ByteArray) {
+        val contentType = headers.entries.firstOrNull { it.key.equals("Content-Type", ignoreCase = true) }?.value
+        val request = Request.Builder()
+            .url(url)
+            .apply { headers.forEach { (name, value) -> header(name, value) } }
+            .put(content.toRequestBody(contentType?.toMediaTypeOrNull()))
+            .build()
+        val response = try {
+            http.newCall(request).await()
+        } catch (e: IOException) {
+            throw TransportException("fopost: PUT $url failed: ${e.message}", e)
+        }
+        response.use {
+            if (it.code in 200..299) return
+            val text = try {
+                it.body?.string().orEmpty()
+            } catch (e: IOException) {
+                throw TransportException("fopost: reading the response to PUT $url failed", e)
+            }
+            throw errorFor(it.code, text, rateLimitOf(it), retryAfterOf(it))
+        }
     }
 
     fun <T> jsonBody(value: T, serializer: SerializationStrategy<T>): RequestBody =
