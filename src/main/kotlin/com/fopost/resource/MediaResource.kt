@@ -2,7 +2,9 @@ package com.fopost.resource
 
 import com.fopost.internal.ApiClient
 import com.fopost.model.MediaLibraryItem
+import com.fopost.model.PresignedUpload
 import com.fopost.model.UploadedMedia
+import com.fopost.param.PresignUploadParams
 import java.io.File
 import java.net.URLConnection
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -42,6 +44,33 @@ public class MediaResource internal constructor(private val http: ApiClient) {
             .apply { workspaceId?.let { addFormDataPart("workspaceId", it) } }
             .build()
         return http.callList("POST", "/media/upload", UploadedMedia.serializer(), body).firstOrNull()
+    }
+
+    /** Reserve a direct-upload slot. PUT the bytes to `uploadUrl` yourself, then call [complete]. */
+    public suspend fun presign(workspaceId: String, filename: String, mimeType: String, size: Long): PresignedUpload =
+        http.call(
+            "POST",
+            "/media/presign",
+            PresignedUpload.serializer(),
+            http.jsonBody(PresignUploadParams(workspaceId, filename, mimeType, size), PresignUploadParams.serializer()),
+        )
+
+    /** Turn a finished direct upload into a library item. */
+    public suspend fun complete(uploadId: String): UploadedMedia =
+        http.call("POST", "/media/presign/$uploadId/complete", UploadedMedia.serializer())
+
+    /** Presign, PUT the bytes to the returned url, and complete, in one call. */
+    public suspend fun uploadDirect(
+        workspaceId: String,
+        filename: String,
+        mimeType: String,
+        data: ByteArray,
+    ): UploadedMedia {
+        val slot = presign(workspaceId, filename, mimeType, data.size.toLong())
+        val uploadId = requireNotNull(slot.uploadId) { "fopost: presign answered without an uploadId" }
+        val uploadUrl = requireNotNull(slot.uploadUrl) { "fopost: presign answered without an uploadUrl" }
+        http.putRaw(uploadUrl, slot.headers.orEmpty(), data)
+        return complete(uploadId)
     }
 
     /** Removes the file from the library. Posts already published keep the copy on the platform. */

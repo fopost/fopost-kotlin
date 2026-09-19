@@ -36,3 +36,13 @@ public data class UploadedMedia(
     /** The same file shaped as a content-block attachment. */
     public fun toMediaItem(): MediaItem = MediaItem(type = type, name = name, url = url, size = size)
 }
+
+/** A one-time upload slot: PUT the bytes to [uploadUrl] with [headers], then complete it. */
+@Serializable
+public data class PresignedUpload(
+    @SerialName("upload_id") @JsonNames("uploadId") val uploadId: String? = null,
+    @SerialName("upload_url") @JsonNames("uploadUrl") val uploadUrl: String? = null,
+    val method: String? = null,
+    val headers: Map<String, String>? = null,
+    @SerialName("expires_at") @JsonNames("expiresAt") val expiresAt: Instant? = null,
+)
