@@ -12,6 +12,7 @@ import com.fopost.resource.AutomationsResource
 import com.fopost.resource.CommunitiesResource
 import com.fopost.resource.BroadcastsResource
 import com.fopost.resource.ContactsResource
+import com.fopost.resource.GoogleBusinessResource
 import com.fopost.resource.InboxResource
 import com.fopost.resource.KnowledgeResource
 import com.fopost.resource.LabelsResource
@@ -131,6 +132,9 @@ public class FoPost @JvmOverloads constructor(
     public val knowledge: KnowledgeResource = KnowledgeResource(api)
     public val ads: AdsResource = AdsResource(api)
     public val validate: ValidateResource = ValidateResource(api)
+
+    /** Manage a connected Google Business Profile location. */
+    public val googleBusiness: GoogleBusinessResource = GoogleBusinessResource(api)
 
     /**
      * Call an endpoint this SDK does not wrap yet, authenticated and retried like any other call.
