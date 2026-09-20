@@ -399,3 +399,30 @@ Tests run against a local mock server and never touch the network.
 
 MIT. Full documentation is at [fopost.com/docs](https://fopost.com/docs); questions or a problem,
 [fopost.com/contact](https://fopost.com/contact).
+
+### Google Ads
+
+Campaigns, ad groups, ads, audiences and insights are on `client.ads` and dispatch by
+connection. What only Google has is on `client.googleAds`:
+
+```kotlin
+val scope = GoogleAdsScope(connectionId = "c4d5e6f7-…", customerId = "1234567890")
+val keywords = client.googleAds.keywords(scope)
+
+client.googleAds.createKeyword(
+    CreateGoogleKeywordParams(
+        workspaceId = "7d2b8c11-…",
+        connectionId = "c4d5e6f7-…",
+        customerId = "1234567890",
+        adGroupId = "1234567890~adGroup~77",
+        text = "running shoes",
+        matchType = GoogleMatchTypes.EXACT,
+    ),
+)
+```
+
+Also `keywordIdeas`, `keywordMetrics`, `searchTerms`, `bidStrategies`, `adSchedule` and
+`setAdSchedule`, the negative keyword lists, `assets` and `assetGroups`,
+`localServicesLeads`, the conversion methods, and `query` for a raw read-only GAQL SELECT.
+Changes need the `publish` scope as well as `ads`; `customerId` has to name an account the
+connection's grant reaches.

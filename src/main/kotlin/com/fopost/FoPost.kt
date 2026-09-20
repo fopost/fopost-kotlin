@@ -12,6 +12,7 @@ import com.fopost.resource.AutomationsResource
 import com.fopost.resource.CommunitiesResource
 import com.fopost.resource.BroadcastsResource
 import com.fopost.resource.ContactsResource
+import com.fopost.resource.GoogleAdsResource
 import com.fopost.resource.GoogleBusinessResource
 import com.fopost.resource.InboxResource
 import com.fopost.resource.KnowledgeResource
@@ -131,6 +132,9 @@ public class FoPost @JvmOverloads constructor(
     /** The workspace knowledge base, which grounds drafted replies. */
     public val knowledge: KnowledgeResource = KnowledgeResource(api)
     public val ads: AdsResource = AdsResource(api)
+
+    /** Google Ads only: keywords, assets, conversions and raw GAQL. */
+    public val googleAds: GoogleAdsResource = GoogleAdsResource(api)
     public val validate: ValidateResource = ValidateResource(api)
 
     /** Manage a connected Google Business Profile location. */
