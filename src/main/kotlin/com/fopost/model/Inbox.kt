@@ -49,10 +49,11 @@ public data class InboxPostContext(
 )
 
 /**
- * A comment, mention or direct message on a connected account.
+ * A comment, mention, review or direct message on a connected account.
  *
- * [type] is `comment`, `mention` or `dm`; [state] is `unread`, `read`, `resolved` or `snoozed`;
- * [direction] is `inbound` or `outbound`.
+ * [type] is `comment`, `mention`, `review` or `dm`; [state] is `unread`, `read`, `resolved` or
+ * `snoozed`; [direction] is `inbound` or `outbound`. [rating] is the stars on a review, 1-5, and
+ * null on every other type.
  */
 @Serializable
 public data class InboxItem(
@@ -67,6 +68,7 @@ public data class InboxItem(
     @SerialName("author_handle") @JsonNames("authorHandle") val authorHandle: String? = null,
     @SerialName("author_avatar_url") @JsonNames("authorAvatarUrl") val authorAvatarUrl: String? = null,
     val text: String? = null,
+    val rating: Int? = null,
     val attachments: List<InboxAttachment> = emptyList(),
     val permalink: String? = null,
     @SerialName("post_external_id") @JsonNames("postExternalId") val postExternalId: String? = null,
@@ -95,12 +97,18 @@ public data class InboxItem(
     @SerialName("can_quick_reply") @JsonNames("canQuickReply") val canQuickReply: Boolean? = null,
     /** A DM can be opened with [com.fopost.resource.InboxResource.startConversation] and `commentId`. */
     @SerialName("can_private_reply") @JsonNames("canPrivateReply") val canPrivateReply: Boolean? = null,
+    /** The platform's own state for a comment: `published`, `held`, `spam` or `rejected`. */
+    @SerialName("moderation_status") @JsonNames("moderationStatus") val moderationStatus: String? = null,
     val post: JsonObject? = null,
     @SerialName("post_context") @JsonNames("postContext") val postContext: InboxPostContext? = null,
     val account: InboxAccountRef? = null,
 )
 
-/** One platform post and the comments it has collected. */
+/**
+ * One platform post and the comments it has collected, or one review left on the business.
+ *
+ * [rating] is the stars on a review thread, and null on comments and mentions.
+ */
 @Serializable
 public data class InboxThread(
     @SerialName("workspace_id") @JsonNames("workspaceId") val workspaceId: String? = null,
@@ -111,6 +119,7 @@ public data class InboxThread(
     @SerialName("last_comment_at") @JsonNames("lastCommentAt") val lastCommentAt: Instant? = null,
     @SerialName("last_comment_text") @JsonNames("lastCommentText") val lastCommentText: String? = null,
     @SerialName("last_comment_author") @JsonNames("lastCommentAuthor") val lastCommentAuthor: String? = null,
+    val rating: Int? = null,
     val post: InboxPostContext? = null,
     val account: InboxAccountRef? = null,
 )
@@ -153,6 +162,8 @@ public data class InboxAccount(
     @SerialName("dm_pending_reason") @JsonNames("dmPendingReason") val dmPendingReason: String? = null,
     /** A new DM can be opened from this account by handle. */
     @SerialName("can_start_conversation") @JsonNames("canStartConversation") val canStartConversation: Boolean? = null,
+    /** The grant predates a permission the inbox read needs; reconnect the account once. */
+    @SerialName("reconnect_required") @JsonNames("reconnectRequired") val reconnectRequired: Boolean? = null,
 )
 
 /** Inbox support per platform. [comments] and [dms] are `live`, `soon` or `none`. */

@@ -157,7 +157,7 @@ client.posts.listAll(PostListParams(workspaceId = workspaceId))
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `posts`       | `list`, `listAll`, `get`, `create`, `update`, `delete`, `duplicate`, `publish`, `retry`, `cancel`, `preflight`, `deliveries`, `publishRuns`, `analytics`, `bulkShift`, `bulkLabel`, `bulkDelete`, `validateImport`, `commitImport`, `rollbackImport` |
 | `workspaces`  | `list`, `get`, `create`, `update`, `delete`, `analytics`                                                                                                                                                                                                          |
-| `accounts`    | `list`, `get`, `create`, `rename`, `move`, `delete`, `healthSummary`, `health`, `togglePrimary`, `validate`, `refreshToken`, `analytics`, `createTelegramConnectCode`, `getTelegramConnectStatus`, `getTelegramBotCommands`, `setTelegramBotCommands`, `deleteTelegramBotCommands`, `listSlackChannels`, `listSlackMembers`, `getSlackIdentity`, `updateSlackIdentity`                                                                                                                                            |
+| `accounts`    | `list`, `get`, `create`, `rename`, `move`, `delete`, `healthSummary`, `health`, `togglePrimary`, `validate`, `refreshToken`, `analytics`, `createTelegramConnectCode`, `getTelegramConnectStatus`, `getTelegramBotCommands`, `setTelegramBotCommands`, `deleteTelegramBotCommands`, `listSlackChannels`, `listSlackMembers`, `getSlackIdentity`, `updateSlackIdentity`, `getIceBreakers`, `setIceBreakers`, `deleteIceBreakers`, `getPersistentMenu`, `setPersistentMenu`, `deletePersistentMenu`, `getGreeting`, `setGreeting`, `deleteGreeting`, `getWebhookSubscription`, `resubscribeWebhook`, `listDiscordChannels`, `switchDiscordChannel`, `getDiscordIdentity`, `updateDiscordIdentity`, `listDiscordPins`, `deleteDiscordMessage`, `pinDiscordMessage`, `unpinDiscordMessage`, `crosspostDiscordMessage`, `createDiscordThread`, `sendDiscordDirectMessage`, `listDiscordEvents`, `getDiscordEvent`, `createDiscordEvent`, `updateDiscordEvent`, `deleteDiscordEvent`, `listDiscordMembers`, `getDiscordMember`, `listDiscordRoles`, `createDiscordRole`, `updateDiscordRole`, `deleteDiscordRole`, `addDiscordMemberRole`, `removeDiscordMemberRole`                                                                                                                                            |
 | `communities` | `list`, `sync`, `search`, `add`, `remove`                                                                                                                                                                                                                         |
 | `accountGroups` | `list`, `get`, `create`, `update`, `delete`, `setMembers`                                                                                                                                                                                                      |
 | `labels`      | `list`, `get`, `create`, `update`, `delete`                                                                                                                                                                                                                       |
@@ -165,9 +165,17 @@ client.posts.listAll(PostListParams(workspaceId = workspaceId))
 | `analytics`   | `overview`, `timeSeries`, `topPosts`, `labels`, `postsTable`, `postingStreak`, `demographics`, `collect`                                                                                                                                                          |
 | `automations` | `list`, `get`, `create`, `update`, `delete`, `toggle`, `runs`, `run`, `trigger`, `stats`                                                                                                                                                                          |
 | `media`       | `list`, `upload`, `presign`, `complete`, `uploadDirect`, `delete`                                                                                                                                                                                                |
+| `inbox`       | `list`, `threads`, `conversations`, `unreadCount`, `accounts`, `platforms`, `markThreadRead`, `refresh`, `update`, `editComment`, `reply`, `hide`, `unhide`, `delete`, `like`, `unlike`, `pin`, `unpin`, `react`, `startConversation`, `setTyping`, `handover`, `listApprovals`, `approveReply`, `rejectReply` |
+| `contacts`    | `list`, `get`, `create`, `update`, `delete`, `conversations`, `import`, `listFields`, `createField`, `updateField`, `deleteField`, `conversationAnalytics` |
+| `broadcasts`  | `list`, `get`, `create`, `update`, `delete`, `send`, `cancel`, `recipients` |
+| `sequences`   | `list`, `get`, `create`, `update`, `delete`, `enroll`, `unenroll`, `enrollments` |
+| `ads`         | `list`, `external`, `boostable`, `connections`, `sources`, `authorizeMeta`, `deleteConnection`, `boost`, `create`, `refresh`, `setStatus`, `delete`, `accountTree`, `createCampaign`, `campaign`, `updateCampaign`, `deleteCampaign`, `duplicateCampaign`, `createAdSet`, `adSet`, `updateAdSet`, `deleteAdSet`, `duplicateAdSet`, `createNetworkAd`, `networkAd`, `updateNetworkAd`, `deleteNetworkAd`, `duplicateNetworkAd`, `bulkSetStatus`, `creatives`, `createCreative`, `creative`, `deleteCreative`, `estimateReach`, `insights`, `adInsights`, `audiences`, `createAudience`, `audience`, `updateAudience`, `deleteAudience`, `addAudienceUsers`, `searchTargeting`, `leadForms`, `createLeadForm`, `leadForm`, `archiveLeadForm`, `leads`, `leadsFeed`, `leadPages`, `subscribeLeadPage`, `unsubscribeLeadPage`, `goals`, `catalogs`, `createCatalog`, `catalog`, `updateCatalog`, `deleteCatalog`, `catalogProducts`, `writeCatalogProducts`, `productFeeds`, `createProductFeed`, `deleteProductFeed`, `feedUploads`, `startFeedUpload`, `productSets`, `createProductSet`, `updateProductSet`, `deleteProductSet`, `reachFrequency`, `createReachFrequency`, `reachFrequencyPrediction`, `reserveReachFrequency`, `cancelReachFrequency`, `library`, `partnershipCreators`, `requestPartnership`, `revokePartnership`, `accountActivity`, `labels`, `createLabel`, `updateLabel`, `deleteLabel`, `applyLabel`, `studies`, `createStudy`, `study`, `deleteStudy`, `iosCampaignLimits`, `highDemandPeriods`, `createHighDemandPeriod`, `deleteHighDemandPeriod`, `valueRuleSets`, `createValueRuleSet`, `deleteValueRuleSet` |
+| `knowledge`   | `list`, `create`, `update`, `delete`, `sync`, `search`                                                                                                                                                                                                           |
 | `inbox`       | `list`, `threads`, `conversations`, `unreadCount`, `accounts`, `platforms`, `markThreadRead`, `refresh`, `update`, `editComment`, `reply`, `hide`, `unhide`, `delete`, `like`, `unlike`, `pin`, `unpin`, `react`, `startConversation`, `setTyping`, `listApprovals`, `approveReply`, `rejectReply` |
 | `ads`         | `list`, `external`, `boostable`, `connections`, `sources`, `authorizeMeta`, `deleteConnection`, `boost`, `create`, `refresh`, `setStatus`, `delete`, `accountTree`, `createCampaign`, `campaign`, `updateCampaign`, `deleteCampaign`, `duplicateCampaign`, `createAdSet`, `adSet`, `updateAdSet`, `deleteAdSet`, `duplicateAdSet`, `createNetworkAd`, `networkAd`, `updateNetworkAd`, `deleteNetworkAd`, `duplicateNetworkAd`, `bulkSetStatus`, `creatives`, `createCreative`, `creative`, `deleteCreative`, `estimateReach`, `insights`, `adInsights`, `audiences`, `createAudience`, `audience`, `updateAudience`, `deleteAudience`, `addAudienceUsers`, `searchTargeting`, `leadForms`, `createLeadForm`, `leadForm`, `archiveLeadForm`, `leads`, `leadsFeed`, `leadPages`, `subscribeLeadPage`, `unsubscribeLeadPage` |
+| `googleBusiness` | `getLocation`, `updateLocation`, `getAttributes`, `updateAttributes`, `getMenus`, `replaceMenus`, `getServices`, `replaceServices`, `listMedia`, `addMedia`, `deleteMedia`, `listPlaceActions`, `createPlaceAction`, `updatePlaceAction`, `deletePlaceAction`, `getVerificationOptions`, `startVerification`, `completeVerification`, `getPerformance`, `getSearchKeywords`, `assign` |
 | `validate`    | `post`, `length`, `media`                                                                                                                                                                                                                                        |
+| `activity`    | `list`                                                                                                                                                                                                                                                           |
 
 For an endpoint the SDK does not wrap yet, `request` sends an authenticated call and hands back
 the raw body; `requestAs` decodes the `data` payload into a type of yours:
@@ -292,6 +300,50 @@ try {
 `rateLimit` on any of them carries the `X-RateLimit-*` headers that came with the response, and
 `field(name)` reads an extra field the error body carried.
 
+## Broadcasts and sequences
+
+A broadcast is one message into every conversation you already have with a segment of your contacts; a sequence is a series of them on a delay. Neither opens a cold DM.
+
+Nothing is sent into a closed messaging window: Messenger and Instagram take a business-initiated message only within 24 hours of the contact's last one, so recipients outside it come back skipped with `window_closed` rather than attempted. Telegram, Slack, Bluesky and Reddit have no window. The number sent is therefore often lower than the audience, and that is correct rather than a failure.
+
+```kotlin
+val broadcast = client.broadcasts.create(
+    CreateBroadcastParams(
+        workspaceId = workspaceId,
+        accountId = accountId,
+        name = "September check-in",
+        text = "New colours just landed. Want a look?",
+        audience = AudienceFilter(platforms = listOf("instagram")),
+    ),
+)
+
+// `recipients` is how many contacts matched, not how many will be messaged.
+val sent = client.broadcasts.send(broadcast.id!!)
+
+// Who was skipped, and why.
+client.broadcasts.recipients(broadcast.id!!, RecipientListParams(status = "skipped"))
+    .data
+    .forEach { println("${it.displayName} — ${it.skipReason}") }
+
+val sequence = client.sequences.create(
+    CreateSequenceParams(
+        workspaceId = workspaceId,
+        accountId = accountId,
+        name = "Welcome",
+        steps = listOf(
+            SequenceStep(delayHours = 0.0, text = "Thanks for the follow — anything I can help with?"),
+            SequenceStep(delayHours = 48.0, text = "Here is what people usually ask us first."),
+        ),
+    ),
+)
+
+// By id, or by the same audience filter a broadcast takes.
+client.sequences.enroll(sequence.id!!, EnrollParams(contactIds = listOf(contactId)))
+
+// Nothing further fires for them.
+client.sequences.unenroll(sequence.id!!, listOf(contactId))
+```
+
 ## Scopes
 
 An API key carries only the scopes granted when it was created, and every request is confined to
@@ -300,9 +352,13 @@ are `workspaces`, `accounts`, `labels`, `webhooks`, `analytics`, `automations`, 
 `ads.boost`, `ads.create`, `ads.setStatus` and `ads.delete` spend money and need `publish` as well
 as `ads`; a boost or ad starts paused unless `paused` is `false`. So do creating, updating, deleting
 and duplicating campaigns, ad sets and network ads, and `ads.bulkSetStatus`.
-`inbox.editComment`, `like`, `unlike`, `pin`, `unpin`, `react`, `startConversation`, `setTyping`,
+`inbox.editComment`, `like`, `unlike`, `pin`, `unpin`, `react`, `startConversation`, `setTyping`, `handover`,
 deleting our own reply, and a reply with `mediaIds` or `quickReplies` need `publish` as well as
 `inbox`.
+`contacts` reads and writes under `inbox` — a key that may read a message may read who sent it —
+except `contacts.conversationAnalytics`, which answers counts per thread and needs `analytics`.
+`broadcasts` and `sequences` read under `inbox` too; `broadcasts.send`, `broadcasts.cancel`,
+`sequences.enroll` and `sequences.unenroll` need `publish` as well, because they reach a platform.
 
 ## Example
 
