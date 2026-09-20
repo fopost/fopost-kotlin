@@ -166,6 +166,7 @@ client.posts.listAll(PostListParams(workspaceId = workspaceId))
 | `automations` | `list`, `get`, `create`, `update`, `delete`, `toggle`, `runs`, `run`, `trigger`, `stats`                                                                                                                                                                          |
 | `media`       | `list`, `upload`, `presign`, `complete`, `uploadDirect`, `delete`                                                                                                                                                                                                |
 | `inbox`       | `list`, `threads`, `conversations`, `unreadCount`, `accounts`, `platforms`, `markThreadRead`, `refresh`, `update`, `editComment`, `reply`, `hide`, `unhide`, `delete`, `like`, `unlike`, `pin`, `unpin`, `react`, `startConversation`, `setTyping`, `listApprovals`, `approveReply`, `rejectReply` |
+| `contacts`    | `list`, `get`, `create`, `update`, `delete`, `conversations`, `import`, `listFields`, `createField`, `updateField`, `deleteField`, `conversationAnalytics` |
 | `ads`         | `list`, `external`, `boostable`, `connections`, `sources`, `authorizeMeta`, `deleteConnection`, `boost`, `create`, `refresh`, `setStatus`, `delete`, `accountTree`, `createCampaign`, `campaign`, `updateCampaign`, `deleteCampaign`, `duplicateCampaign`, `createAdSet`, `adSet`, `updateAdSet`, `deleteAdSet`, `duplicateAdSet`, `createNetworkAd`, `networkAd`, `updateNetworkAd`, `deleteNetworkAd`, `duplicateNetworkAd`, `bulkSetStatus`, `creatives`, `createCreative`, `creative`, `deleteCreative`, `estimateReach`, `insights`, `adInsights`, `audiences`, `createAudience`, `audience`, `updateAudience`, `deleteAudience`, `addAudienceUsers`, `searchTargeting`, `leadForms`, `createLeadForm`, `leadForm`, `archiveLeadForm`, `leads`, `leadsFeed`, `leadPages`, `subscribeLeadPage`, `unsubscribeLeadPage` |
 | `validate`    | `post`, `length`, `media`                                                                                                                                                                                                                                        |
 
@@ -303,6 +304,8 @@ and duplicating campaigns, ad sets and network ads, and `ads.bulkSetStatus`.
 `inbox.editComment`, `like`, `unlike`, `pin`, `unpin`, `react`, `startConversation`, `setTyping`,
 deleting our own reply, and a reply with `mediaIds` or `quickReplies` need `publish` as well as
 `inbox`.
+`contacts` reads and writes under `inbox` — a key that may read a message may read who sent it —
+except `contacts.conversationAnalytics`, which answers counts per thread and needs `analytics`.
 
 ## Example
 

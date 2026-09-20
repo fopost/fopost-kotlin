@@ -175,6 +175,10 @@ internal class ApiClient(
 
     fun jsonBody(element: JsonElement): RequestBody = element.toString().toRequestBody(JSON_MEDIA_TYPE)
 
+    /** Decodes a JSON element a caller already pulled out of an envelope. */
+    fun <T> decodeElement(deserializer: KSerializer<T>, payload: JsonElement): T =
+        decode(deserializer, payload)
+
     private fun <T> decode(deserializer: KSerializer<T>, payload: JsonElement): T =
         try {
             json.decodeFromJsonElement(deserializer, payload)
