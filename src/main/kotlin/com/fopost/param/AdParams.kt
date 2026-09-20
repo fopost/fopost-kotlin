@@ -5,14 +5,24 @@ import com.fopost.model.AdBudget
 import com.fopost.model.AdTargeting
 import java.time.Instant
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
-/** Where to send the caller after the Meta login. [method] is `business` or `user`. */
+/**
+ * Where to send the caller after the network's login. [provider] names the ad network and
+ * defaults to `meta`; it names the path, so it is not serialized. [method] is the network's own
+ * login method, `business` or `user` on Meta.
+ */
 @Serializable
-public data class MetaAuthorizeParams(
+public data class AdsAuthorizeParams(
     val workspaceId: String,
+    @Transient val provider: String = "meta",
     val method: String? = null,
     val returnTo: String? = null,
 )
+
+/** The body of the deprecated `authorizeMeta`. */
+@Deprecated("Use AdsAuthorizeParams, which takes a provider", ReplaceWith("AdsAuthorizeParams"))
+public typealias MetaAuthorizeParams = AdsAuthorizeParams
 
 /**
  * A post FoPost already published, to promote.
@@ -23,7 +33,7 @@ public data class MetaAuthorizeParams(
 @Serializable
 public data class BoostPostParams(
     val workspaceId: String,
-    /** A Meta Ads connection in the workspace. */
+    /** An ad connection in the workspace. */
     val connectionId: String,
     /** Meta ad account id, `act_…`. */
     val adAccountId: String,
@@ -46,7 +56,7 @@ public data class BoostPostParams(
 @Serializable
 public data class CreateAdParams(
     val workspaceId: String,
-    /** A Meta Ads connection in the workspace. */
+    /** An ad connection in the workspace. */
     val connectionId: String,
     /** Meta ad account id, `act_…`. */
     val adAccountId: String,

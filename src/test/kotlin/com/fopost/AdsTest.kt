@@ -10,7 +10,7 @@ import com.fopost.param.BoostPostParams
 import com.fopost.param.BulkAdStatusParams
 import com.fopost.param.CreateAdCreativeParams
 import com.fopost.param.CreateAudienceParams
-import com.fopost.param.MetaAuthorizeParams
+import com.fopost.param.AdsAuthorizeParams
 import com.fopost.param.UpdateAdCampaignParams
 import java.time.Instant
 import kotlin.test.assertEquals
@@ -134,7 +134,7 @@ class AdsTest {
         server.client().use { client ->
             assertEquals(
                 "https://www.facebook.com/dialog/oauth?state=abc",
-                client.ads.authorizeMeta(MetaAuthorizeParams(workspaceId = "ws_1", method = "business")),
+                client.ads.authorize(AdsAuthorizeParams(workspaceId = "ws_1", method = "business")),
             )
 
             val audience = client.ads.createAudience(
@@ -159,6 +159,8 @@ class AdsTest {
         assertEquals("ws_1", authorizeBody["workspaceId"]!!.jsonPrimitive.content)
         assertEquals("business", authorizeBody["method"]!!.jsonPrimitive.content)
         assertNull(authorizeBody["returnTo"])
+        // The provider names the path and is not sent in the body.
+        assertNull(authorizeBody["provider"])
 
         val create = server.takeRequest()
         assertEquals("/v1/ads/audiences", create.path)

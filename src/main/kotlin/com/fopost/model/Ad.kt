@@ -113,7 +113,7 @@ public data class ExternalAd(
     @SerialName("workspace_id") @JsonNames("workspaceId") val workspaceId: String? = null,
 )
 
-/** A Meta Ads login granted to a workspace. */
+/** An ad-network login granted to a workspace. */
 @Serializable
 public data class AdConnection(
     val id: String? = null,

@@ -26,6 +26,7 @@ import com.fopost.model.NetworkAd
 import com.fopost.model.ReachEstimate
 import com.fopost.model.TargetingOption
 import com.fopost.param.AddAudienceUsersBody
+import com.fopost.param.AdsAuthorizeParams
 import com.fopost.param.BoostPostParams
 import com.fopost.param.BulkAdStatusParams
 import com.fopost.param.CreateAdCampaignParams
@@ -50,7 +51,7 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
 
 /**
- * Meta ads, campaigns, creatives, audiences, insights and lead forms.
+ * Ads, campaigns, creatives, audiences, insights and lead forms across ad networks.
  *
  * Every method needs the `ads` scope. [boost], [create], [setStatus] and [delete] spend money and
  * also need `publish`, as do creating, updating, deleting and duplicating campaigns, ad sets and
@@ -82,16 +83,24 @@ public class AdsResource internal constructor(private val http: ApiClient) {
     public suspend fun sources(workspaceId: String? = null): List<AdSource> =
         http.callList("GET", "/ads/sources", AdSource.serializer(), query = mapOf("workspace_id" to workspaceId))
 
-    /** The Meta login URL. The caller finishes the login in a browser. */
-    public suspend fun authorizeMeta(params: MetaAuthorizeParams): String {
+    /**
+     * The network's login URL. The caller finishes the login in a browser. A network that is not
+     * available on the deployment answers 503.
+     */
+    public suspend fun authorize(params: AdsAuthorizeParams): String {
+        val provider = params.provider.ifEmpty { "meta" }
         val data = http.call(
             "POST",
-            "/ads/connections/meta/authorize",
+            "/ads/connections/$provider/authorize",
             JsonObject.serializer(),
-            http.jsonBody(params, MetaAuthorizeParams.serializer()),
+            http.jsonBody(params, AdsAuthorizeParams.serializer()),
         )
         return data["url"]?.jsonPrimitive?.contentOrNull.orEmpty()
     }
+
+    /** The Meta login URL. */
+    @Deprecated("Use authorize, which takes a provider", ReplaceWith("authorize(params)"))
+    public suspend fun authorizeMeta(params: AdsAuthorizeParams): String = authorize(params)
 
     /** Disconnect. Also deletes every ad record created through the connection. */
     public suspend fun deleteConnection(connectionId: String, workspaceId: String) {
