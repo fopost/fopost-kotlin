@@ -7,7 +7,9 @@ import java.time.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNames
+import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * A connected social account.
@@ -99,4 +101,44 @@ public data class AccountSnapshot(
     val reach: Long? = null,
     @SerialName("profile_views") @JsonNames("profileViews") val profileViews: Long? = null,
     @SerialName("fetched_at") @JsonNames("fetchedAt") val fetchedAt: Instant? = null,
+)
+
+/**
+ * One metric a network reports under its own name.
+ *
+ * [key] is the platform's own name and is stable; [label] is ours and may be reworded, so match
+ * on the key. [value] is a number for every [kind] but `series`, which is an array of points.
+ */
+@Serializable
+public data class PlatformMetricRow(
+    val key: String,
+    val label: String = "",
+    /** One of `count`, `duration_ms`, `currency_usd`, `ratio`, `series`. */
+    val kind: String = "count",
+    val value: JsonElement? = null,
+) {
+    /** The value as a number, or null for a series or a non-numeric answer. */
+    public fun number(): Double? = runCatching { value?.jsonPrimitive?.content?.toDouble() }.getOrNull()
+}
+
+/**
+ * One side of a per-network metric set: the account itself, or its newest measured post.
+ * [externalPostId] is null on the account side.
+ */
+@Serializable
+public data class PlatformMetricsBlock(
+    @SerialName("fetched_at") @JsonNames("fetchedAt") val fetchedAt: String? = null,
+    @SerialName("external_post_id") @JsonNames("externalPostId") val externalPostId: String? = null,
+    val metrics: List<PlatformMetricRow> = emptyList(),
+)
+
+/**
+ * What only this network reports, in its own vocabulary: ad-break earnings, story taps, a
+ * retention curve, the search terms behind a listing.
+ */
+@Serializable
+public data class AccountPlatformMetrics(
+    val platform: String? = null,
+    val account: PlatformMetricsBlock = PlatformMetricsBlock(),
+    val post: PlatformMetricsBlock = PlatformMetricsBlock(),
 )
