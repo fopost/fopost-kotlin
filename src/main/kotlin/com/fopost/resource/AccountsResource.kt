@@ -6,6 +6,21 @@ import com.fopost.model.AccountAnalyticsHistory
 import com.fopost.model.AccountHealth
 import com.fopost.model.AccountValidation
 import com.fopost.model.AccountsHealthSummary
+import com.fopost.model.DiscordAck
+import com.fopost.model.DiscordChannel
+import com.fopost.model.DiscordIdentity
+import com.fopost.model.DiscordMember
+import com.fopost.model.DiscordMessage
+import com.fopost.model.DiscordMessageRef
+import com.fopost.model.DiscordRole
+import com.fopost.model.DiscordScheduledEvent
+import com.fopost.model.DiscordThread
+import com.fopost.model.MetaGreeting
+import com.fopost.model.MetaGreetingText
+import com.fopost.model.MetaIceBreaker
+import com.fopost.model.MetaIceBreakers
+import com.fopost.model.MetaPersistentMenu
+import com.fopost.model.MetaPersistentMenuEntry
 import com.fopost.model.SlackChannel
 import com.fopost.model.SlackIdentity
 import com.fopost.model.SlackMember
@@ -14,10 +29,20 @@ import com.fopost.model.TelegramBotCommands
 import com.fopost.model.TelegramConnectCode
 import com.fopost.model.TelegramConnectStatus
 import com.fopost.model.TokenRefresh
+import com.fopost.model.WebhookSubscription
 import com.fopost.param.CreateAccountParams
 import com.fopost.param.CreateTelegramConnectCodeParams
+import com.fopost.param.DiscordDirectMessageParams
+import com.fopost.param.DiscordEventParams
+import com.fopost.param.DiscordRoleParams
+import com.fopost.param.DiscordThreadParams
 import com.fopost.param.MoveAccountParams
+import com.fopost.param.SetGreetingParams
+import com.fopost.param.SetIceBreakersParams
+import com.fopost.param.SetPersistentMenuParams
 import com.fopost.param.SetTelegramBotCommandsParams
+import com.fopost.param.SwitchDiscordChannelParams
+import com.fopost.param.UpdateDiscordIdentityParams
 import com.fopost.param.UpdateSlackIdentityParams
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.booleanOrNull
@@ -187,4 +212,254 @@ public class AccountsResource internal constructor(private val http: ApiClient) 
             // Built by hand so a null is sent, not dropped.
             http.jsonBody(buildJsonObject { params.fields.forEach { (key, value) -> put(key, value) } }),
         )
+
+    // ─── Meta messaging settings (Facebook Pages, Instagram) ─────────
+
+    /** The prompts shown before the first message. A network without them answers 400. */
+    public suspend fun getIceBreakers(accountId: String): MetaIceBreakers =
+        http.call("GET", "/accounts/$accountId/messaging/ice-breakers", MetaIceBreakers.serializer())
+
+    /** Replace the ice breakers, up to four. */
+    public suspend fun setIceBreakers(accountId: String, iceBreakers: List<MetaIceBreaker>): MetaIceBreakers =
+        http.call(
+            "PUT",
+            "/accounts/$accountId/messaging/ice-breakers",
+            MetaIceBreakers.serializer(),
+            http.jsonBody(SetIceBreakersParams(iceBreakers), SetIceBreakersParams.serializer()),
+        )
+
+    /** Clear the ice breakers. */
+    public suspend fun deleteIceBreakers(accountId: String): MetaIceBreakers =
+        http.call("DELETE", "/accounts/$accountId/messaging/ice-breakers", MetaIceBreakers.serializer())
+
+    /** The always-visible Messenger menu. Facebook Pages only; other networks answer 400. */
+    public suspend fun getPersistentMenu(accountId: String): MetaPersistentMenu =
+        http.call("GET", "/accounts/$accountId/messaging/persistent-menu", MetaPersistentMenu.serializer())
+
+    /** Replace the menu, one entry per locale, up to three items each. */
+    public suspend fun setPersistentMenu(
+        accountId: String,
+        menu: List<MetaPersistentMenuEntry>,
+    ): MetaPersistentMenu =
+        http.call(
+            "PUT",
+            "/accounts/$accountId/messaging/persistent-menu",
+            MetaPersistentMenu.serializer(),
+            http.jsonBody(SetPersistentMenuParams(menu), SetPersistentMenuParams.serializer()),
+        )
+
+    /** Clear the menu. */
+    public suspend fun deletePersistentMenu(accountId: String): MetaPersistentMenu =
+        http.call("DELETE", "/accounts/$accountId/messaging/persistent-menu", MetaPersistentMenu.serializer())
+
+    /** The text shown before a Messenger conversation starts. Facebook Pages only. */
+    public suspend fun getGreeting(accountId: String): MetaGreeting =
+        http.call("GET", "/accounts/$accountId/messaging/greeting", MetaGreeting.serializer())
+
+    /** Replace the greeting, one entry per locale, each up to 160 characters. */
+    public suspend fun setGreeting(accountId: String, greeting: List<MetaGreetingText>): MetaGreeting =
+        http.call(
+            "PUT",
+            "/accounts/$accountId/messaging/greeting",
+            MetaGreeting.serializer(),
+            http.jsonBody(SetGreetingParams(greeting), SetGreetingParams.serializer()),
+        )
+
+    /** Clear the greeting. */
+    public suspend fun deleteGreeting(accountId: String): MetaGreeting =
+        http.call("DELETE", "/accounts/$accountId/messaging/greeting", MetaGreeting.serializer())
+
+    /** What the network is delivering to the FoPost webhook for this account. */
+    public suspend fun getWebhookSubscription(accountId: String): WebhookSubscription =
+        http.call("GET", "/accounts/$accountId/webhook-subscription", WebhookSubscription.serializer())
+
+    /** Subscribe to every field this account needs, lapsed or not. */
+    public suspend fun resubscribeWebhook(accountId: String): WebhookSubscription =
+        http.call("POST", "/accounts/$accountId/webhook-subscription", WebhookSubscription.serializer())
+
+    // ── Discord (bot connections) ───────────────────────────────────────
+
+    /**
+     * Text channels the bot can post to in the connected server.
+     *
+     * A 409 `webhook_connection` means the account posts through a webhook; upgrade it to the bot
+     * first. The same applies to every other Discord call here.
+     */
+    public suspend fun listDiscordChannels(accountId: String): List<DiscordChannel> =
+        http.callList("GET", discordPath(accountId, "/channels"), DiscordChannel.serializer())
+
+    /** Move the account to another channel in the same server. */
+    public suspend fun switchDiscordChannel(accountId: String, channelId: String): DiscordChannel =
+        http.call(
+            "PATCH",
+            discordPath(accountId, "/channels/current"),
+            DiscordChannel.serializer(),
+            http.jsonBody(SwitchDiscordChannelParams(channelId), SwitchDiscordChannelParams.serializer()),
+        )
+
+    /** The nickname and avatar the bot wears in the server. */
+    public suspend fun getDiscordIdentity(accountId: String): DiscordIdentity =
+        http.call("GET", discordPath(accountId, "/identity"), DiscordIdentity.serializer())
+
+    /** Change the nickname or avatar the bot wears in the server. */
+    public suspend fun updateDiscordIdentity(
+        accountId: String,
+        params: UpdateDiscordIdentityParams,
+    ): DiscordIdentity =
+        http.call(
+            "PATCH",
+            discordPath(accountId, "/identity"),
+            DiscordIdentity.serializer(),
+            // Built by hand so a null is sent, not dropped.
+            http.jsonBody(buildJsonObject { params.fields.forEach { (key, value) -> put(key, value) } }),
+        )
+
+    /** Pinned messages in the account's channel. */
+    public suspend fun listDiscordPins(accountId: String): List<DiscordMessage> =
+        http.callList("GET", discordPath(accountId, "/messages/pinned"), DiscordMessage.serializer())
+
+    /** Remove a message from the account's channel. */
+    public suspend fun deleteDiscordMessage(accountId: String, messageId: String): DiscordAck =
+        http.call("DELETE", discordPath(accountId, "/messages/$messageId"), DiscordAck.serializer())
+
+    /** Pin a message in the account's channel. */
+    public suspend fun pinDiscordMessage(accountId: String, messageId: String): DiscordAck =
+        http.call("POST", discordPath(accountId, "/messages/$messageId/pin"), DiscordAck.serializer())
+
+    /** Unpin a message in the account's channel. */
+    public suspend fun unpinDiscordMessage(accountId: String, messageId: String): DiscordAck =
+        http.call("DELETE", discordPath(accountId, "/messages/$messageId/pin"), DiscordAck.serializer())
+
+    /** Publish an announcement-channel message to every server following the channel. */
+    public suspend fun crosspostDiscordMessage(accountId: String, messageId: String): DiscordMessageRef =
+        http.call(
+            "POST",
+            discordPath(accountId, "/messages/$messageId/crosspost"),
+            DiscordMessageRef.serializer(),
+        )
+
+    /** Start a thread on a message. */
+    public suspend fun createDiscordThread(
+        accountId: String,
+        messageId: String,
+        params: DiscordThreadParams,
+    ): DiscordThread =
+        http.call(
+            "POST",
+            discordPath(accountId, "/messages/$messageId/thread"),
+            DiscordThread.serializer(),
+            http.jsonBody(params, DiscordThreadParams.serializer()),
+        )
+
+    /** Send one message to a member of the server. */
+    public suspend fun sendDiscordDirectMessage(
+        accountId: String,
+        memberId: String,
+        content: String,
+    ): DiscordMessageRef =
+        http.call(
+            "POST",
+            discordPath(accountId, "/dm"),
+            DiscordMessageRef.serializer(),
+            http.jsonBody(
+                DiscordDirectMessageParams(memberId, content),
+                DiscordDirectMessageParams.serializer(),
+            ),
+        )
+
+    /** The server's scheduled events. */
+    public suspend fun listDiscordEvents(accountId: String): List<DiscordScheduledEvent> =
+        http.callList("GET", discordPath(accountId, "/events"), DiscordScheduledEvent.serializer())
+
+    /** One scheduled event. */
+    public suspend fun getDiscordEvent(accountId: String, eventId: String): DiscordScheduledEvent =
+        http.call("GET", discordPath(accountId, "/events/$eventId"), DiscordScheduledEvent.serializer())
+
+    /** Add an event to the server's calendar. */
+    public suspend fun createDiscordEvent(accountId: String, params: DiscordEventParams): DiscordScheduledEvent =
+        http.call(
+            "POST",
+            discordPath(accountId, "/events"),
+            DiscordScheduledEvent.serializer(),
+            http.jsonBody(params, DiscordEventParams.serializer()),
+        )
+
+    /** Change a scheduled event; a null field is left as it is. */
+    public suspend fun updateDiscordEvent(
+        accountId: String,
+        eventId: String,
+        params: DiscordEventParams,
+    ): DiscordScheduledEvent =
+        http.call(
+            "PATCH",
+            discordPath(accountId, "/events/$eventId"),
+            DiscordScheduledEvent.serializer(),
+            http.jsonBody(params, DiscordEventParams.serializer()),
+        )
+
+    /** Remove a scheduled event. */
+    public suspend fun deleteDiscordEvent(accountId: String, eventId: String): DiscordAck =
+        http.call("DELETE", discordPath(accountId, "/events/$eventId"), DiscordAck.serializer())
+
+    /** The server's roster, or the members whose name starts with [query]. */
+    public suspend fun listDiscordMembers(
+        accountId: String,
+        query: String? = null,
+        limit: Int? = null,
+    ): List<DiscordMember> =
+        http.callList(
+            "GET",
+            discordPath(accountId, "/members"),
+            DiscordMember.serializer(),
+            query = mapOf("q" to query, "limit" to limit),
+        )
+
+    /** One member of the server. */
+    public suspend fun getDiscordMember(accountId: String, memberId: String): DiscordMember =
+        http.call("GET", discordPath(accountId, "/members/$memberId"), DiscordMember.serializer())
+
+    /** The server's roles, highest first. */
+    public suspend fun listDiscordRoles(accountId: String): List<DiscordRole> =
+        http.callList("GET", discordPath(accountId, "/roles"), DiscordRole.serializer())
+
+    /** Add a role to the server. */
+    public suspend fun createDiscordRole(accountId: String, params: DiscordRoleParams): DiscordRole =
+        http.call(
+            "POST",
+            discordPath(accountId, "/roles"),
+            DiscordRole.serializer(),
+            http.jsonBody(params, DiscordRoleParams.serializer()),
+        )
+
+    /** Change a role on the server; a null field is left as it is. */
+    public suspend fun updateDiscordRole(
+        accountId: String,
+        roleId: String,
+        params: DiscordRoleParams,
+    ): DiscordRole =
+        http.call(
+            "PATCH",
+            discordPath(accountId, "/roles/$roleId"),
+            DiscordRole.serializer(),
+            http.jsonBody(params, DiscordRoleParams.serializer()),
+        )
+
+    /** Remove a role from the server. */
+    public suspend fun deleteDiscordRole(accountId: String, roleId: String): DiscordAck =
+        http.call("DELETE", discordPath(accountId, "/roles/$roleId"), DiscordAck.serializer())
+
+    /** Give a member a role. */
+    public suspend fun addDiscordMemberRole(accountId: String, roleId: String, memberId: String): DiscordAck =
+        http.call("PUT", memberRolePath(accountId, roleId, memberId), DiscordAck.serializer())
+
+    /** Take a role from a member. */
+    public suspend fun removeDiscordMemberRole(accountId: String, roleId: String, memberId: String): DiscordAck =
+        http.call("DELETE", memberRolePath(accountId, roleId, memberId), DiscordAck.serializer())
+
+    private fun discordPath(accountId: String, suffix: String): String =
+        "/accounts/$accountId/discord$suffix"
+
+    private fun memberRolePath(accountId: String, roleId: String, memberId: String): String =
+        discordPath(accountId, "/roles/$roleId/members/$memberId")
 }
+
