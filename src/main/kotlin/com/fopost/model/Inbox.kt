@@ -97,6 +97,8 @@ public data class InboxItem(
     @SerialName("can_quick_reply") @JsonNames("canQuickReply") val canQuickReply: Boolean? = null,
     /** A DM can be opened with [com.fopost.resource.InboxResource.startConversation] and `commentId`. */
     @SerialName("can_private_reply") @JsonNames("canPrivateReply") val canPrivateReply: Boolean? = null,
+    /** The platform's own state for a comment: `published`, `held`, `spam` or `rejected`. */
+    @SerialName("moderation_status") @JsonNames("moderationStatus") val moderationStatus: String? = null,
     val post: JsonObject? = null,
     @SerialName("post_context") @JsonNames("postContext") val postContext: InboxPostContext? = null,
     val account: InboxAccountRef? = null,
@@ -160,6 +162,8 @@ public data class InboxAccount(
     @SerialName("dm_pending_reason") @JsonNames("dmPendingReason") val dmPendingReason: String? = null,
     /** A new DM can be opened from this account by handle. */
     @SerialName("can_start_conversation") @JsonNames("canStartConversation") val canStartConversation: Boolean? = null,
+    /** The grant predates a permission the inbox read needs; reconnect the account once. */
+    @SerialName("reconnect_required") @JsonNames("reconnectRequired") val reconnectRequired: Boolean? = null,
 )
 
 /** Inbox support per platform. [comments] and [dms] are `live`, `soon` or `none`. */
