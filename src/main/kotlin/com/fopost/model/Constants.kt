@@ -39,11 +39,13 @@ public object Platforms {
     public const val WHOP: String = "whop"
     public const val SKOOL: String = "skool"
 
+    public const val WHATSAPP: String = "whatsapp"
+
     public val ALL: List<String> = listOf(
         TWITTER, LINKEDIN, FACEBOOK, INSTAGRAM, INSTAGRAM_BUSINESS, TELEGRAM, TWITCH, DISCORD,
         SLACK, REDDIT, PINTEREST, TUMBLR, DRIBBBLE, MEWE, TIKTOK, YOUTUBE, BLUESKY, THREADS,
         MASTODON, LEMMY, DEVTO, HASHNODE, MEDIUM, SUBSTACK, GOOGLE_BUSINESS, KICK, LISTMONK,
-        WORDPRESS, NOSTR, WHOP, SKOOL,
+        WORDPRESS, NOSTR, WHOP, SKOOL, WHATSAPP,
     )
 }
 
