@@ -32,7 +32,7 @@ class DiscordTest {
         server.enqueue(
             json(
                 200,
-                """{"data":[{"id":"c2","name":"launches","type":0,"parent_id":null,"nsfw":false,"is_current":true}]}""",
+                """{"data":[{"id":"c2","name":"launches","type":0,"parent_id":null,"nsfw":false,"can_post":true,"is_current":true}]}""",
             ),
         )
         server.enqueue(json(200, """{"data":{"id":"c2","name":"launches","is_current":true}}"""))
