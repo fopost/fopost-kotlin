@@ -31,14 +31,19 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 
-/** Comments, mentions and direct messages on connected accounts. Needs the `inbox` scope. */
+/**
+ * Comments, mentions, reviews and direct messages on connected accounts. Needs the `inbox` scope.
+ */
 public class InboxResource internal constructor(private val http: ApiClient) {
 
     /** One page of items, newest first. `meta.perPage` and `meta.total` are set. */
     public suspend fun list(params: InboxListParams = InboxListParams()): Page<InboxItem> =
         http.page("/inbox", InboxItem.serializer(), params.toQuery())
 
-    /** One row per post with comments; `kind = "mentions"` for posts the account was tagged in. */
+    /**
+     * One row per post with comments; `kind = "mentions"` for posts the account was tagged in,
+     * `kind = "reviews"` for one row per review left on the business.
+     */
     public suspend fun threads(params: InboxThreadListParams = InboxThreadListParams()): Page<InboxThread> =
         http.page("/inbox/posts", InboxThread.serializer(), params.toQuery())
 
