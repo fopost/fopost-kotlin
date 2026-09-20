@@ -5,6 +5,7 @@ import com.fopost.internal.SDK_VERSION
 import com.fopost.internal.defaultJson
 import com.fopost.resource.AccountGroupsResource
 import com.fopost.resource.AccountsResource
+import com.fopost.resource.ActivityResource
 import com.fopost.resource.AdsResource
 import com.fopost.resource.AnalyticsResource
 import com.fopost.resource.AutomationsResource
@@ -110,6 +111,9 @@ public class FoPost @JvmOverloads constructor(
     public val accountGroups: AccountGroupsResource = AccountGroupsResource(api)
     public val communities: CommunitiesResource = CommunitiesResource(api)
     public val labels: LabelsResource = LabelsResource(api)
+
+    /** What happened in a workspace, and the security audit log. */
+    public val activity: ActivityResource = ActivityResource(api)
     public val webhooks: WebhooksResource = WebhooksResource(api)
     public val analytics: AnalyticsResource = AnalyticsResource(api)
     public val automations: AutomationsResource = AutomationsResource(api)
