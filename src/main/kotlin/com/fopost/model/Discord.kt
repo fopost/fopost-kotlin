@@ -16,6 +16,8 @@ public data class DiscordChannel(
     val type: Int = 0,
     @SerialName("parent_id") @JsonNames("parentId") val parentId: String? = null,
     val nsfw: Boolean = false,
+    /** False when a channel permission in Discord shuts the bot out. */
+    @SerialName("can_post") @JsonNames("canPost") val canPost: Boolean = true,
     @SerialName("is_current") @JsonNames("isCurrent") val isCurrent: Boolean = false,
 )
 
