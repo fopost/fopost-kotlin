@@ -12,6 +12,7 @@ import com.fopost.resource.CommunitiesResource
 import com.fopost.resource.BroadcastsResource
 import com.fopost.resource.ContactsResource
 import com.fopost.resource.InboxResource
+import com.fopost.resource.KnowledgeResource
 import com.fopost.resource.LabelsResource
 import com.fopost.resource.MediaResource
 import com.fopost.resource.PostsResource
@@ -121,6 +122,9 @@ public class FoPost @JvmOverloads constructor(
     public val contacts: ContactsResource = ContactsResource(api)
     public val broadcasts: BroadcastsResource = BroadcastsResource(api)
     public val sequences: SequencesResource = SequencesResource(api)
+
+    /** The workspace knowledge base, which grounds drafted replies. */
+    public val knowledge: KnowledgeResource = KnowledgeResource(api)
     public val ads: AdsResource = AdsResource(api)
     public val validate: ValidateResource = ValidateResource(api)
 
