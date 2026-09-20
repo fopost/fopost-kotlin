@@ -8,12 +8,17 @@ import com.fopost.model.AdConnection
 import com.fopost.model.AdCreative
 import com.fopost.model.AdCreativesResult
 import com.fopost.model.AdInsightsReport
+import com.fopost.model.AdLibraryPage
+import com.fopost.model.AdProvider
 import com.fopost.model.AdSet
 import com.fopost.model.AdSource
 import com.fopost.model.Audience
 import com.fopost.model.AudiencesResult
 import com.fopost.model.BoostablePost
+import com.fopost.model.BidPricing
 import com.fopost.model.BulkAdStatusResult
+import com.fopost.model.ConversionMetrics
+import com.fopost.model.ConversionRule
 import com.fopost.model.CreatedAudience
 import com.fopost.model.ExternalAd
 import com.fopost.model.LeadFormDetail
@@ -24,7 +29,12 @@ import com.fopost.model.LeadsFeed
 import com.fopost.model.LeadsPage
 import com.fopost.model.NetworkAd
 import com.fopost.model.ReachEstimate
+import com.fopost.model.SupplyForecast
 import com.fopost.model.TargetingOption
+import com.fopost.param.AdCompany
+import com.fopost.param.AdForecastParams
+import com.fopost.param.AdLibraryParams
+import com.fopost.param.AddAudienceCompaniesBody
 import com.fopost.param.AddAudienceUsersBody
 import com.fopost.param.BoostPostParams
 import com.fopost.param.BulkAdStatusParams
@@ -32,12 +42,17 @@ import com.fopost.param.CreateAdCampaignParams
 import com.fopost.param.CreateAdCreativeParams
 import com.fopost.param.CreateAdParams
 import com.fopost.param.CreateAdSetParams
+import com.fopost.param.ConversionAssociationBody
+import com.fopost.param.ConversionEvent
+import com.fopost.param.ConversionEventsBody
 import com.fopost.param.CreateAudienceParams
+import com.fopost.param.CreateConversionRuleParams
 import com.fopost.param.CreateLeadFormParams
 import com.fopost.param.CreateNetworkAdParams
 import com.fopost.param.DuplicateAdObjectBody
 import com.fopost.param.LeadPageBody
 import com.fopost.param.MetaAuthorizeParams
+import com.fopost.param.UpdateConversionRuleParams
 import com.fopost.param.ReachEstimateParams
 import com.fopost.param.SetAdStatusBody
 import com.fopost.param.UpdateAdCampaignParams
@@ -82,16 +97,24 @@ public class AdsResource internal constructor(private val http: ApiClient) {
     public suspend fun sources(workspaceId: String? = null): List<AdSource> =
         http.callList("GET", "/ads/sources", AdSource.serializer(), query = mapOf("workspace_id" to workspaceId))
 
-    /** The Meta login URL. The caller finishes the login in a browser. */
-    public suspend fun authorizeMeta(params: MetaAuthorizeParams): String {
+    /** The ad networks this deployment knows, with what each one supports. */
+    public suspend fun providers(): List<AdProvider> =
+        http.callList("GET", "/ads/providers", AdProvider.serializer())
+
+    /** The network's login URL. The caller finishes the login in a browser. */
+    public suspend fun authorize(provider: String, params: MetaAuthorizeParams): String {
         val data = http.call(
             "POST",
-            "/ads/connections/meta/authorize",
+            "/ads/connections/$provider/authorize",
             JsonObject.serializer(),
             http.jsonBody(params, MetaAuthorizeParams.serializer()),
         )
         return data["url"]?.jsonPrimitive?.contentOrNull.orEmpty()
     }
+
+    /** The Meta login URL. */
+    @Deprecated("Use authorize(\"meta\", params).", ReplaceWith("authorize(\"meta\", params)"))
+    public suspend fun authorizeMeta(params: MetaAuthorizeParams): String = authorize("meta", params)
 
     /** Disconnect. Also deletes every ad record created through the connection. */
     public suspend fun deleteConnection(connectionId: String, workspaceId: String) {
@@ -571,6 +594,178 @@ public class AdsResource internal constructor(private val http: ApiClient) {
         )
         return data["id"]?.jsonPrimitive?.contentOrNull.orEmpty()
     }
+
+    /**
+     * Add companies to a company-list audience. Answers the count the network took. The rows
+     * travel with the request and are never stored.
+     */
+    public suspend fun addAudienceCompanies(
+        audienceId: String,
+        workspaceId: String,
+        connectionId: String,
+        companies: List<AdCompany>,
+    ): Int {
+        val data = http.call(
+            "POST",
+            "/ads/audiences/$audienceId/companies",
+            JsonObject.serializer(),
+            http.jsonBody(AddAudienceCompaniesBody(companies), AddAudienceCompaniesBody.serializer()),
+            query = connection(workspaceId, connectionId),
+        )
+        return data["added"]?.jsonPrimitive?.intOrNull ?: 0
+    }
+
+    /** What the auction currently costs for that audience. */
+    public suspend fun bidPricing(params: AdForecastParams): BidPricing = http.call(
+        "POST",
+        "/ads/linkedin/bid-pricing",
+        BidPricing.serializer(),
+        http.jsonBody(params, AdForecastParams.serializer()),
+    )
+
+    /** What that audience would deliver at that budget. */
+    public suspend fun supplyForecast(params: AdForecastParams): SupplyForecast = http.call(
+        "POST",
+        "/ads/linkedin/supply-forecast",
+        SupplyForecast.serializer(),
+        http.jsonBody(params, AdForecastParams.serializer()),
+    )
+
+    /** The conversion rules on one ad account. */
+    public suspend fun conversionRules(
+        workspaceId: String?,
+        connectionId: String,
+        adAccountId: String,
+    ): List<ConversionRule> = http.callList(
+        "GET",
+        "/ads/linkedin/conversion-rules",
+        ConversionRule.serializer(),
+        query = connection(workspaceId, connectionId) + mapOf("ad_account_id" to adAccountId),
+    )
+
+    /** Creates a conversion rule. Answers its id. */
+    public suspend fun createConversionRule(params: CreateConversionRuleParams): String {
+        val data = http.call(
+            "POST",
+            "/ads/linkedin/conversion-rules",
+            JsonObject.serializer(),
+            http.jsonBody(params, CreateConversionRuleParams.serializer()),
+        )
+        return data["id"]?.jsonPrimitive?.contentOrNull.orEmpty()
+    }
+
+    /** One rule, with the ad sets it is attached to. */
+    public suspend fun conversionRule(
+        ruleId: String,
+        workspaceId: String?,
+        connectionId: String,
+    ): ConversionRule = http.call(
+        "GET",
+        conversionRulePath(ruleId),
+        ConversionRule.serializer(),
+        query = connection(workspaceId, connectionId),
+    )
+
+    /** Changes a rule. */
+    public suspend fun updateConversionRule(
+        ruleId: String,
+        workspaceId: String,
+        connectionId: String,
+        params: UpdateConversionRuleParams,
+    ): ConversionRule = http.call(
+        "PATCH",
+        conversionRulePath(ruleId),
+        ConversionRule.serializer(),
+        http.jsonBody(params, UpdateConversionRuleParams.serializer()),
+        query = connection(workspaceId, connectionId),
+    )
+
+    /** Turns a rule off. The network keeps the history. */
+    public suspend fun deleteConversionRule(ruleId: String, workspaceId: String, connectionId: String) {
+        http.send("DELETE", conversionRulePath(ruleId), query = connection(workspaceId, connectionId))
+    }
+
+    /** Attaches a rule to an ad set on the same connection. */
+    public suspend fun attachConversionRule(
+        ruleId: String,
+        workspaceId: String,
+        connectionId: String,
+        campaignId: String,
+    ): ConversionRule = association("POST", ruleId, workspaceId, connectionId, campaignId)
+
+    /** Detaches a rule from an ad set. */
+    public suspend fun detachConversionRule(
+        ruleId: String,
+        workspaceId: String,
+        connectionId: String,
+        campaignId: String,
+    ): ConversionRule = association("DELETE", ruleId, workspaceId, connectionId, campaignId)
+
+    /** What a rule recorded between two `YYYY-MM-DD` days, inclusive. */
+    public suspend fun conversionMetrics(
+        ruleId: String,
+        workspaceId: String?,
+        connectionId: String,
+        since: String,
+        until: String,
+    ): ConversionMetrics = http.call(
+        "GET",
+        conversionRulePath(ruleId, "/metrics"),
+        ConversionMetrics.serializer(),
+        query = connection(workspaceId, connectionId) + mapOf("since" to since, "until" to until),
+    )
+
+    /**
+     * Sends conversions back to the network. Answers how many it took. Each event needs an email
+     * or a click id; the address is hashed inside the API and nothing about an event is stored.
+     */
+    public suspend fun sendConversionEvents(
+        ruleId: String,
+        workspaceId: String,
+        connectionId: String,
+        events: List<ConversionEvent>,
+    ): Int {
+        val data = http.call(
+            "POST",
+            conversionRulePath(ruleId, "/events"),
+            JsonObject.serializer(),
+            http.jsonBody(ConversionEventsBody(events), ConversionEventsBody.serializer()),
+            query = connection(workspaceId, connectionId),
+        )
+        return data["accepted"]?.jsonPrimitive?.intOrNull ?: 0
+    }
+
+    /** The network's own public ad library, not the connection's ads. */
+    public suspend fun adLibrary(params: AdLibraryParams): AdLibraryPage = http.call(
+        "GET",
+        "/ads/ad-library",
+        AdLibraryPage.serializer(),
+        query = connection(params.workspaceId, params.connectionId) + mapOf(
+            "keyword" to params.keyword,
+            "advertiser" to params.advertiser,
+            "countries" to params.countries?.joinToString(","),
+            "since" to params.since,
+            "until" to params.until,
+            "cursor" to params.cursor,
+        ),
+    )
+
+    private suspend fun association(
+        method: String,
+        ruleId: String,
+        workspaceId: String,
+        connectionId: String,
+        campaignId: String,
+    ): ConversionRule = http.call(
+        method,
+        conversionRulePath(ruleId, "/associations"),
+        ConversionRule.serializer(),
+        http.jsonBody(ConversionAssociationBody(campaignId), ConversionAssociationBody.serializer()),
+        query = connection(workspaceId, connectionId),
+    )
+
+    private fun conversionRulePath(ruleId: String, suffix: String = ""): String =
+        "/ads/linkedin/conversion-rules/$ruleId$suffix"
 
     private fun connection(workspaceId: String?, connectionId: String): Map<String, Any?> =
         mapOf("workspace_id" to workspaceId, "connection_id" to connectionId)

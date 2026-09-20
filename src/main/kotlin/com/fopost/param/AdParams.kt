@@ -280,3 +280,109 @@ internal data class LeadPageBody(
     val connectionId: String,
     val pageId: String,
 )
+
+/**
+ * One row of a company-list upload. At least one of [name], [domain], [pageUrl] or [ticker] is
+ * required; the rows travel with the request and are never stored.
+ */
+@Serializable
+public data class AdCompany(
+    val name: String? = null,
+    val domain: String? = null,
+    /** The company's page on the network. */
+    val pageUrl: String? = null,
+    /** Stock ticker, where the network matches on one. */
+    val ticker: String? = null,
+    val country: String? = null,
+)
+
+@Serializable
+internal data class AddAudienceCompaniesBody(val companies: List<AdCompany>)
+
+/**
+ * The body of a bid-pricing or supply-forecast request. [bidType] applies to bid pricing only,
+ * [budgetMinor] to the supply forecast only.
+ */
+@Serializable
+public data class AdForecastParams(
+    val workspaceId: String,
+    val connectionId: String,
+    /** The ad account as the network addresses it. */
+    val adAccountId: String,
+    /** `engagement`, `traffic`, `awareness` or `video_views`. */
+    val goal: String,
+    val targeting: AdTargeting,
+    val placements: List<String>? = null,
+    /** `CPC`, `CPM` or `CPV`. */
+    val bidType: String? = null,
+    /** The budget for the forecast window, minor units. */
+    val budgetMinor: Long? = null,
+)
+
+/** A new conversion rule on one ad account. */
+@Serializable
+public data class CreateConversionRuleParams(
+    val workspaceId: String,
+    val connectionId: String,
+    val adAccountId: String,
+    val name: String,
+    /** `purchase`, `lead`, `sign_up`, `add_to_cart`, `download`, `install`, `key_page_view` or `other`. */
+    val type: String,
+    /** `last_touch` or `each_campaign`. */
+    val attribution: String,
+    val postClickWindowDays: Int? = null,
+    val viewThroughWindowDays: Int? = null,
+    /** What one conversion is worth, minor units. */
+    val valueMinor: Long? = null,
+    val currency: String? = null,
+)
+
+/** Changes to a conversion rule. Only the fields you set move. */
+@Serializable
+public data class UpdateConversionRuleParams(
+    val name: String? = null,
+    val type: String? = null,
+    val attribution: String? = null,
+    val postClickWindowDays: Int? = null,
+    val viewThroughWindowDays: Int? = null,
+    val valueMinor: Long? = null,
+    val currency: String? = null,
+    val enabled: Boolean? = null,
+)
+
+@Serializable
+internal data class ConversionAssociationBody(val campaignId: String)
+
+/**
+ * One conversion sent back to the network. It needs an [email] or a [clickId]; the address is
+ * hashed inside the API and nothing about an event is stored.
+ */
+@Serializable
+public data class ConversionEvent(
+    /** Epoch milliseconds. */
+    val happenedAt: Long,
+    val valueMinor: Long? = null,
+    val currency: String? = null,
+    /** Your own id for the event, so a replay is counted once. */
+    val eventId: String? = null,
+    val email: String? = null,
+    /** The network's click id, as the landing page received it. */
+    val clickId: String? = null,
+)
+
+@Serializable
+internal data class ConversionEventsBody(val events: List<ConversionEvent>)
+
+/** What an ad-library search narrows on. Dates are `YYYY-MM-DD`. */
+public data class AdLibraryParams(
+    val connectionId: String,
+    val workspaceId: String? = null,
+    val keyword: String? = null,
+    val advertiser: String? = null,
+    /** ISO 3166-1 alpha-2 codes. */
+    val countries: List<String>? = null,
+    val since: String? = null,
+    val until: String? = null,
+    /** The `nextCursor` from the previous page. */
+    val cursor: String? = null,
+)
