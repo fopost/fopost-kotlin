@@ -188,6 +188,38 @@ public data class AnalyticsParams(
     )
 }
 
+/**
+ * Filters for the metric changes feed. `since` is an ISO 8601 timestamp; leaving it unset asks for
+ * the last seven days.
+ */
+public data class MetricChangesParams(
+    val since: String? = null,
+    val limit: Int? = null,
+    val workspaceId: String? = null,
+    val accountId: String? = null,
+) {
+    public fun toQuery(): Map<String, Any?> = mapOf(
+        "since" to since,
+        "limit" to limit,
+        "workspace_id" to workspaceId,
+        "accountId" to accountId,
+    )
+}
+
+/** Pagination for the posts made outside FoPost. */
+public data class NativePostsParams(
+    val page: Int? = null,
+    val perPage: Int? = null,
+    /** Keep only posts published in the last this many days. */
+    val days: Int? = null,
+) {
+    public fun toQuery(): Map<String, Any?> = mapOf(
+        "page" to page,
+        "per_page" to perPage,
+        "days" to days,
+    )
+}
+
 /** A direct upload being reserved. `size` is the exact byte count that will be PUT. */
 @Serializable
 public data class PresignUploadParams(

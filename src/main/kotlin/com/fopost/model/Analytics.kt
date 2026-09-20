@@ -245,3 +245,186 @@ public data class CollectError(
     val stage: String? = null,
     val message: String? = null,
 )
+
+// ─── Deeper analytics ────────────────────────────────────────────
+
+/** One age band of the content decay report. */
+@Serializable
+public data class DecayBand(
+    val bucket: String? = null,
+    val label: String? = null,
+    /** Posts with at least one reading in this band. */
+    val posts: Int = 0,
+    @SerialName("avg_engagements") @JsonNames("avgEngagements") val avgEngagements: Double = 0.0,
+    @SerialName("avg_impressions") @JsonNames("avgImpressions") val avgImpressions: Double = 0.0,
+    /**
+     * Mean share of the post's final engagement reached by this age, 0-1. Null when nothing in the
+     * band had earned anything yet.
+     */
+    @SerialName("share_of_final") @JsonNames("shareOfFinal") val shareOfFinal: Double? = null,
+)
+
+/** How engagement accumulates as a post ages. */
+@Serializable
+public data class ContentDecay(
+    val days: Int? = null,
+    /** Posts with a publish time and at least one later reading. */
+    @SerialName("posts_measured") @JsonNames("postsMeasured") val postsMeasured: Int = 0,
+    /** First band where the average post had passed half its final engagement. */
+    @SerialName("half_life_bucket") @JsonNames("halfLifeBucket") val halfLifeBucket: String? = null,
+    val bands: List<DecayBand> = emptyList(),
+)
+
+/** One week of posting. `weekStart` is the Monday, UTC, as YYYY-MM-DD. */
+@Serializable
+public data class FrequencyWeek(
+    @SerialName("week_start") @JsonNames("weekStart") val weekStart: String? = null,
+    val posts: Int = 0,
+    val engagements: Long = 0,
+    @SerialName("avg_engagements_per_post")
+    @JsonNames("avgEngagementsPerPost")
+    val avgEngagementsPerPost: Double = 0.0,
+)
+
+/** The weeks that shared a cadence, folded together. */
+@Serializable
+public data class FrequencyBand(
+    val band: String? = null,
+    val label: String? = null,
+    val weeks: Int = 0,
+    val posts: Int = 0,
+    @SerialName("avg_posts_per_week") @JsonNames("avgPostsPerWeek") val avgPostsPerWeek: Double = 0.0,
+    @SerialName("avg_engagements_per_post")
+    @JsonNames("avgEngagementsPerPost")
+    val avgEngagementsPerPost: Double = 0.0,
+    /** Engagements over reach, impressions as the stand-in; null with neither. */
+    @SerialName("engagement_rate") @JsonNames("engagementRate") val engagementRate: Double? = null,
+)
+
+/** Weekly cadence set against what each cadence earned per post. */
+@Serializable
+public data class PostingFrequency(
+    val days: Int? = null,
+    val weeks: List<FrequencyWeek> = emptyList(),
+    val bands: List<FrequencyBand> = emptyList(),
+    /** The cadence that earned the most per post; null without posts. */
+    val best: FrequencyBand? = null,
+)
+
+/** What moved between one reading and the one before it. */
+@Serializable
+public data class TimelineDelta(
+    val impressions: Long = 0,
+    val reach: Long = 0,
+    val engagements: Long = 0,
+    val likes: Long = 0,
+    val comments: Long = 0,
+    val shares: Long = 0,
+)
+
+/** One reading of a post. */
+@Serializable
+public data class TimelinePoint(
+    val at: Instant? = null,
+    /** Minutes since publication; null when the network never said when. */
+    @SerialName("age_minutes") @JsonNames("ageMinutes") val ageMinutes: Long? = null,
+    val impressions: Long? = null,
+    val reach: Long? = null,
+    val engagements: Long? = null,
+    val likes: Long? = null,
+    val comments: Long? = null,
+    val shares: Long? = null,
+    @SerialName("video_views") @JsonNames("videoViews") val videoViews: Long? = null,
+    val delta: TimelineDelta = TimelineDelta(),
+)
+
+/** One delivery's readings: the same post on two networks decays differently. */
+@Serializable
+public data class TimelineDelivery(
+    @SerialName("account_id") @JsonNames("accountId") val accountId: String? = null,
+    val platform: String? = null,
+    val username: String? = null,
+    @SerialName("external_post_id") @JsonNames("externalPostId") val externalPostId: String? = null,
+    @SerialName("posted_at") @JsonNames("postedAt") val postedAt: Instant? = null,
+    val points: List<TimelinePoint> = emptyList(),
+)
+
+/** Every reading held for one post, one timeline per delivery. */
+@Serializable
+public data class PostTimeline(
+    /** Null when the post was made natively on the network. */
+    @SerialName("post_id") @JsonNames("postId") val postId: String? = null,
+    val deliveries: List<TimelineDelivery> = emptyList(),
+)
+
+/** One reading, as the changes feed reports it. */
+@Serializable
+public data class MetricChange(
+    @SerialName("account_id") @JsonNames("accountId") val accountId: String? = null,
+    val platform: String? = null,
+    @SerialName("external_post_id") @JsonNames("externalPostId") val externalPostId: String? = null,
+    /** Null for a post made natively on the network. */
+    @SerialName("post_id") @JsonNames("postId") val postId: String? = null,
+    @SerialName("posted_at") @JsonNames("postedAt") val postedAt: Instant? = null,
+    @SerialName("fetched_at") @JsonNames("fetchedAt") val fetchedAt: Instant? = null,
+    val impressions: Long? = null,
+    val reach: Long? = null,
+    val engagements: Long? = null,
+    val likes: Long? = null,
+    val comments: Long? = null,
+    val shares: Long? = null,
+)
+
+/** One page of readings. Feed `cursor` back as the next `since`. */
+@Serializable
+public data class MetricChangePage(
+    val since: Instant? = null,
+    /** Null when nothing changed. */
+    val cursor: Instant? = null,
+    @SerialName("has_more") @JsonNames("hasMore") val hasMore: Boolean = false,
+    val changes: List<MetricChange> = emptyList(),
+)
+
+/** What the on-demand refresh did for one delivery. */
+@Serializable
+public data class CollectPostDelivery(
+    @SerialName("account_id") @JsonNames("accountId") val accountId: String? = null,
+    val platform: String? = null,
+    @SerialName("external_post_id") @JsonNames("externalPostId") val externalPostId: String? = null,
+    val collected: Boolean = false,
+    @SerialName("fetched_at") @JsonNames("fetchedAt") val fetchedAt: Instant? = null,
+    /** Why the refresh did not happen. */
+    val message: String? = null,
+)
+
+/** What one post's refresh managed. */
+@Serializable
+public data class CollectPostResult(
+    val collected: Int = 0,
+    val deliveries: List<CollectPostDelivery> = emptyList(),
+)
+
+/** The freshest reading held for a post made outside FoPost. */
+@Serializable
+public data class NativePostMetrics(
+    val impressions: Long? = null,
+    val reach: Long? = null,
+    val engagements: Long? = null,
+    val likes: Long? = null,
+    val comments: Long? = null,
+    val shares: Long? = null,
+    @SerialName("video_views") @JsonNames("videoViews") val videoViews: Long? = null,
+)
+
+/** A post on the account that never went out through FoPost. */
+@Serializable
+public data class NativePost(
+    @SerialName("external_post_id") @JsonNames("externalPostId") val externalPostId: String? = null,
+    val text: String? = null,
+    val permalink: String? = null,
+    @SerialName("thumbnail_url") @JsonNames("thumbnailUrl") val thumbnailUrl: String? = null,
+    @SerialName("media_type") @JsonNames("mediaType") val mediaType: String? = null,
+    @SerialName("posted_at") @JsonNames("postedAt") val postedAt: Instant? = null,
+    @SerialName("fetched_at") @JsonNames("fetchedAt") val fetchedAt: Instant? = null,
+    val metrics: NativePostMetrics = NativePostMetrics(),
+)

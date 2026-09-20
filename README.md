@@ -162,7 +162,7 @@ client.posts.listAll(PostListParams(workspaceId = workspaceId))
 | `accountGroups` | `list`, `get`, `create`, `update`, `delete`, `setMembers`                                                                                                                                                                                                      |
 | `labels`      | `list`, `get`, `create`, `update`, `delete`                                                                                                                                                                                                                       |
 | `webhooks`    | `list`, `create`, `update`, `delete`, `test`                                                                                                                                                                                                                      |
-| `analytics`   | `overview`, `timeSeries`, `topPosts`, `labels`, `postsTable`, `postingStreak`, `demographics`, `collect`                                                                                                                                                          |
+| `analytics`   | `overview`, `timeSeries`, `topPosts`, `labels`, `postsTable`, `postingStreak`, `demographics`, `collect`, `decay`, `frequency`, `timeline`, `changes`, `collectPost`, `nativePosts`                                                                               |
 | `automations` | `list`, `get`, `create`, `update`, `delete`, `toggle`, `runs`, `run`, `trigger`, `stats`                                                                                                                                                                          |
 | `media`       | `list`, `upload`, `presign`, `complete`, `uploadDirect`, `delete`                                                                                                                                                                                                |
 | `inbox`       | `list`, `threads`, `conversations`, `unreadCount`, `accounts`, `platforms`, `markThreadRead`, `refresh`, `update`, `editComment`, `reply`, `hide`, `unhide`, `delete`, `like`, `unlike`, `pin`, `unpin`, `react`, `startConversation`, `setTyping`, `listApprovals`, `approveReply`, `rejectReply` |
@@ -218,6 +218,46 @@ verdict.platforms.filterNot { it.ready == true }.forEach { println("${it.platfor
 
 val lengths = client.validate.length(ValidateLengthParams("A long caption…", listOf("twitter")))
 val file = client.validate.media("https://example.com/chart.png")
+```
+
+## Analytics
+
+```kotlin
+// How long a post keeps earning, from the repeated readings of each post
+val decay = client.analytics.decay(AnalyticsParams(days = 30))
+println(decay.halfLifeBucket) // e.g. "1h_3h"
+
+// Whether posting more earned more
+val cadence = client.analytics.frequency(AnalyticsParams(days = 90))
+println(cadence.best?.label) // e.g. "3-5 a week"
+
+// Every reading held for one post, with what moved between them
+val timeline = client.analytics.timeline(post.id)
+
+// Mirror the metrics into your own store, without refetching everything
+var cursor: String? = null
+while (true) {
+    val page = client.analytics.changes(MetricChangesParams(since = cursor))
+    save(page.changes)
+    val next = page.cursor ?: break
+    if (!page.hasMore) break
+    cursor = next.toString()
+}
+
+// Refresh one post now instead of waiting for the next collection run
+client.analytics.collectPost(post.id)
+
+// Posts on the account that never went out through FoPost
+for (native in client.analytics.nativePosts(accounts.first().id)) {
+    println("${native.permalink} ${native.metrics.engagements}")
+}
+```
+
+A post is addressed by its FoPost id or by its permalink, so a post made by
+hand on the network works the same way:
+
+```kotlin
+client.analytics.timeline("https://x.com/acme/status/1")
 ```
 
 ## Webhooks
