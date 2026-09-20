@@ -37,6 +37,7 @@ import com.fopost.param.CreateLeadFormParams
 import com.fopost.param.CreateNetworkAdParams
 import com.fopost.param.DuplicateAdObjectBody
 import com.fopost.param.LeadPageBody
+import com.fopost.param.GoogleAuthorizeParams
 import com.fopost.param.MetaAuthorizeParams
 import com.fopost.param.ReachEstimateParams
 import com.fopost.param.SetAdStatusBody
@@ -50,7 +51,7 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
 
 /**
- * Meta ads, campaigns, creatives, audiences, insights and lead forms.
+ * Ads, campaigns, creatives, audiences, insights and lead forms across the ad networks.
  *
  * Every method needs the `ads` scope. [boost], [create], [setStatus] and [delete] spend money and
  * also need `publish`, as do creating, updating, deleting and duplicating campaigns, ad sets and
@@ -89,6 +90,17 @@ public class AdsResource internal constructor(private val http: ApiClient) {
             "/ads/connections/meta/authorize",
             JsonObject.serializer(),
             http.jsonBody(params, MetaAuthorizeParams.serializer()),
+        )
+        return data["url"]?.jsonPrimitive?.contentOrNull.orEmpty()
+    }
+
+    /** The Google login URL. The caller finishes the login in a browser. */
+    public suspend fun authorizeGoogle(params: GoogleAuthorizeParams): String {
+        val data = http.call(
+            "POST",
+            "/ads/connections/google/authorize",
+            JsonObject.serializer(),
+            http.jsonBody(params, GoogleAuthorizeParams.serializer()),
         )
         return data["url"]?.jsonPrimitive?.contentOrNull.orEmpty()
     }

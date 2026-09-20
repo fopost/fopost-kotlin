@@ -9,6 +9,7 @@ import com.fopost.resource.AdsResource
 import com.fopost.resource.AnalyticsResource
 import com.fopost.resource.AutomationsResource
 import com.fopost.resource.CommunitiesResource
+import com.fopost.resource.GoogleAdsResource
 import com.fopost.resource.InboxResource
 import com.fopost.resource.LabelsResource
 import com.fopost.resource.MediaResource
@@ -116,6 +117,9 @@ public class FoPost @JvmOverloads constructor(
     public val media: MediaResource = MediaResource(api)
     public val inbox: InboxResource = InboxResource(api)
     public val ads: AdsResource = AdsResource(api)
+
+    /** Google Ads only: keywords, assets, conversions and raw GAQL. */
+    public val googleAds: GoogleAdsResource = GoogleAdsResource(api)
     public val validate: ValidateResource = ValidateResource(api)
 
     /**
