@@ -6,6 +6,7 @@ import com.fopost.internal.defaultJson
 import com.fopost.resource.AccountGroupsResource
 import com.fopost.resource.AccountsResource
 import com.fopost.resource.AdsResource
+import com.fopost.resource.BlogsResource
 import com.fopost.resource.AnalyticsResource
 import com.fopost.resource.AutomationsResource
 import com.fopost.resource.CommunitiesResource
@@ -117,6 +118,9 @@ public class FoPost @JvmOverloads constructor(
     public val inbox: InboxResource = InboxResource(api)
     public val ads: AdsResource = AdsResource(api)
     public val validate: ValidateResource = ValidateResource(api)
+
+    /** Articles and products that already live on a connected site. */
+    public val blogs: BlogsResource = BlogsResource(api)
 
     /**
      * Call an endpoint this SDK does not wrap yet, authenticated and retried like any other call.
