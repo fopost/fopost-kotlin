@@ -21,6 +21,13 @@ import com.fopost.model.MetaIceBreaker
 import com.fopost.model.MetaIceBreakers
 import com.fopost.model.MetaPersistentMenu
 import com.fopost.model.MetaPersistentMenuEntry
+import com.fopost.model.BlueskyLanguages
+import com.fopost.model.InstagramAudio
+import com.fopost.model.InstagramPublishingLimit
+import com.fopost.model.InstagramStory
+import com.fopost.model.InstagramStoryInsights
+import com.fopost.model.LinkedInMention
+import com.fopost.model.PinterestBoard
 import com.fopost.model.SlackChannel
 import com.fopost.model.SlackIdentity
 import com.fopost.model.SlackMember
@@ -28,8 +35,15 @@ import com.fopost.model.TelegramBotCommand
 import com.fopost.model.TelegramBotCommands
 import com.fopost.model.TelegramConnectCode
 import com.fopost.model.TelegramConnectStatus
+import com.fopost.model.TikTokCreatorInfo
+import com.fopost.model.TikTokMusic
+import com.fopost.model.TikTokPlace
+import com.fopost.model.TikTokVideoSource
 import com.fopost.model.TokenRefresh
 import com.fopost.model.WebhookSubscription
+import com.fopost.model.YouTubeCaptionTrack
+import com.fopost.model.YouTubePlaylist
+import com.fopost.model.YouTubeTranscript
 import com.fopost.param.CreateAccountParams
 import com.fopost.param.CreateTelegramConnectCodeParams
 import com.fopost.param.DiscordDirectMessageParams
@@ -44,9 +58,13 @@ import com.fopost.param.SetTelegramBotCommandsParams
 import com.fopost.param.SwitchDiscordChannelParams
 import com.fopost.param.UpdateDiscordIdentityParams
 import com.fopost.param.UpdateSlackIdentityParams
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 
@@ -461,5 +479,221 @@ public class AccountsResource internal constructor(private val http: ApiClient) 
 
     private fun memberRolePath(accountId: String, roleId: String, memberId: String): String =
         discordPath(accountId, "/roles/$roleId/members/$memberId")
+    // --- Per-network extras ------------------------------------------------
+
+    /** Boards this Pinterest connection can pin to. */
+    public suspend fun listPinterestBoards(accountId: String): List<PinterestBoard> =
+        http.callList("GET", "/accounts/$accountId/pinterest/boards", PinterestBoard.serializer())
+
+    /** Create a board on the connected Pinterest account. `privacy` is PUBLIC, PROTECTED or SECRET. */
+    public suspend fun createPinterestBoard(
+        accountId: String,
+        name: String,
+        description: String? = null,
+        privacy: String? = null,
+    ): PinterestBoard =
+        http.call(
+            "POST",
+            "/accounts/$accountId/pinterest/boards",
+            PinterestBoard.serializer(),
+            http.jsonBody(
+                buildJsonObject {
+                    put("name", JsonPrimitive(name))
+                    description?.let { put("description", JsonPrimitive(it)) }
+                    privacy?.let { put("privacy", JsonPrimitive(it)) }
+                },
+            ),
+        )
+
+    /** The channel's own playlists, with the stored default marked. */
+    public suspend fun listYouTubePlaylists(accountId: String): List<YouTubePlaylist> =
+        http.callList("GET", "/accounts/$accountId/youtube/playlists", YouTubePlaylist.serializer())
+
+    /** Create a playlist on the connected channel. `privacy` is public, unlisted or private. */
+    public suspend fun createYouTubePlaylist(
+        accountId: String,
+        title: String,
+        description: String? = null,
+        privacy: String? = null,
+    ): YouTubePlaylist =
+        http.call(
+            "POST",
+            "/accounts/$accountId/youtube/playlists",
+            YouTubePlaylist.serializer(),
+            http.jsonBody(
+                buildJsonObject {
+                    put("title", JsonPrimitive(title))
+                    description?.let { put("description", JsonPrimitive(it)) }
+                    privacy?.let { put("privacy", JsonPrimitive(it)) }
+                },
+            ),
+        )
+
+    /**
+     * The playlist a new video joins when the post picks none. A null [playlistId] clears it, and
+     * the stored value comes back.
+     */
+    public suspend fun setDefaultYouTubePlaylist(accountId: String, playlistId: String?): String? {
+        val stored: JsonObject =
+            http.call(
+                "PUT",
+                "/accounts/$accountId/youtube/playlists/default",
+                JsonObject.serializer(),
+                // Built by hand so an explicit null is sent, not dropped.
+                http.jsonBody(
+                    buildJsonObject {
+                        put("playlist_id", playlistId?.let { JsonPrimitive(it) } ?: JsonNull)
+                    },
+                ),
+            )
+        return stored["playlist_id"]?.jsonPrimitive?.contentOrNull
+    }
+
+    /** Caption tracks on one of the channel's videos. */
+    public suspend fun listYouTubeCaptions(accountId: String, videoId: String): List<YouTubeCaptionTrack> =
+        http.callList(
+            "GET",
+            "/accounts/$accountId/youtube/videos/$videoId/captions",
+            YouTubeCaptionTrack.serializer(),
+        )
+
+    /** Upload a caption track. [body] is the subtitle file; YouTube reads SRT and WebVTT. */
+    public suspend fun uploadYouTubeCaptions(
+        accountId: String,
+        videoId: String,
+        language: String,
+        body: String,
+        name: String? = null,
+        isDraft: Boolean? = null,
+    ): YouTubeCaptionTrack =
+        http.call(
+            "POST",
+            "/accounts/$accountId/youtube/videos/$videoId/captions",
+            YouTubeCaptionTrack.serializer(),
+            http.jsonBody(
+                buildJsonObject {
+                    put("language", JsonPrimitive(language))
+                    put("body", JsonPrimitive(body))
+                    name?.let { put("name", JsonPrimitive(it)) }
+                    isDraft?.let { put("is_draft", JsonPrimitive(it)) }
+                },
+            ),
+        )
+
+    /** One caption track read back as text. */
+    public suspend fun readYouTubeTranscript(accountId: String, captionId: String): YouTubeTranscript =
+        http.call("GET", "/accounts/$accountId/youtube/captions/$captionId", YouTubeTranscript.serializer())
+
+    /** What a post from this Bluesky connection is written in when it does not say. */
+    public suspend fun getBlueskyLanguages(accountId: String): BlueskyLanguages =
+        http.call("GET", "/accounts/$accountId/bluesky/languages", BlueskyLanguages.serializer())
+
+    /** Store up to three BCP-47 tags. An empty list clears the default. */
+    public suspend fun setBlueskyLanguages(accountId: String, languages: List<String>): BlueskyLanguages =
+        http.call(
+            "PUT",
+            "/accounts/$accountId/bluesky/languages",
+            BlueskyLanguages.serializer(),
+            http.jsonBody(
+                buildJsonObject {
+                    put("languages", JsonArray(languages.map { JsonPrimitive(it) }))
+                },
+            ),
+        )
+
+    /** The switches TikTok enforces at publish time, changed in the TikTok app. */
+    public suspend fun getTikTokCreatorInfo(accountId: String): TikTokCreatorInfo =
+        http.call("GET", "/accounts/$accountId/tiktok/creator-info", TikTokCreatorInfo.serializer())
+
+    /**
+     * TikTok's Commercial Music Library. Needs the Marketing API product on the TikTok app;
+     * without it the call fails with 403 rather than answering an empty list.
+     */
+    public suspend fun searchTikTokMusic(
+        accountId: String,
+        query: String,
+        limit: Int? = null,
+    ): List<TikTokMusic> =
+        http.callList(
+            "GET",
+            "/accounts/$accountId/tiktok/music",
+            TikTokMusic.serializer(),
+            query = mapOf("q" to query, "limit" to limit?.toString()),
+        )
+
+    /** Places a post can be tagged with. Same TikTok product as the music library. */
+    public suspend fun searchTikTokLocations(
+        accountId: String,
+        query: String,
+        limit: Int? = null,
+    ): List<TikTokPlace> =
+        http.callList(
+            "GET",
+            "/accounts/$accountId/tiktok/locations",
+            TikTokPlace.serializer(),
+            query = mapOf("q" to query, "limit" to limit?.toString()),
+        )
+
+    /** Resolves a share link to one of this account's own videos, for repurposing. */
+    public suspend fun lookupTikTokVideo(accountId: String, url: String): TikTokVideoSource =
+        http.call(
+            "POST",
+            "/accounts/$accountId/tiktok/video-download",
+            TikTokVideoSource.serializer(),
+            http.jsonBody(buildJsonObject { put("url", url) }),
+        )
+
+    /** Tracks a Reel can carry. With no query Instagram answers with what is trending. */
+    public suspend fun searchInstagramAudio(
+        accountId: String,
+        query: String? = null,
+        audioType: String? = null,
+    ): List<InstagramAudio> =
+        http.callList(
+            "GET",
+            "/accounts/$accountId/instagram/audio",
+            InstagramAudio.serializer(),
+            query = mapOf("q" to query, "audio_type" to audioType),
+        )
+
+    /** How many posts are left before Instagram refuses the next one. */
+    public suspend fun getInstagramPublishingLimit(accountId: String): InstagramPublishingLimit =
+        http.call(
+            "GET",
+            "/accounts/$accountId/instagram/publishing-limit",
+            InstagramPublishingLimit.serializer(),
+        )
+
+    /**
+     * Stories still inside their 24 hours, posted through FoPost or not. Asking for [insights]
+     * costs one extra call per story.
+     */
+    public suspend fun listInstagramStories(accountId: String, insights: Boolean = false): List<InstagramStory> =
+        http.callList(
+            "GET",
+            "/accounts/$accountId/instagram/stories",
+            InstagramStory.serializer(),
+            query = if (insights) mapOf("insights" to true) else null,
+        )
+
+    /** The insight set for one story. */
+    public suspend fun getInstagramStoryInsights(accountId: String, storyId: String): InstagramStoryInsights =
+        http.call(
+            "GET",
+            "/accounts/$accountId/instagram/stories/$storyId/insights",
+            InstagramStoryInsights.serializer(),
+        )
+
+    /**
+     * Organizations a LinkedIn post can mention. People are not searchable: LinkedIn has no public
+     * person search, so a member mention needs a URN you already hold.
+     */
+    public suspend fun searchLinkedInMentions(accountId: String, query: String): List<LinkedInMention> =
+        http.callList(
+            "GET",
+            "/accounts/$accountId/linkedin/mentions",
+            LinkedInMention.serializer(),
+            query = mapOf("q" to query),
+        )
 }
 
