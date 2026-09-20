@@ -3,10 +3,14 @@ package com.fopost.resource
 import com.fopost.internal.ApiClient
 import com.fopost.model.Ad
 import com.fopost.model.AdAccountTree
+import com.fopost.model.AdBusinessCenter
 import com.fopost.model.AdCampaign
+import com.fopost.model.AdComment
+import com.fopost.model.AdCommentsPage
 import com.fopost.model.AdConnection
 import com.fopost.model.AdCreative
 import com.fopost.model.AdCreativesResult
+import com.fopost.model.AdIdentity
 import com.fopost.model.AdInsightsReport
 import com.fopost.model.AdSet
 import com.fopost.model.AdSource
@@ -24,7 +28,9 @@ import com.fopost.model.LeadsFeed
 import com.fopost.model.LeadsPage
 import com.fopost.model.NetworkAd
 import com.fopost.model.ReachEstimate
+import com.fopost.model.SparkPost
 import com.fopost.model.TargetingOption
+import com.fopost.param.AdCommentParams
 import com.fopost.param.AddAudienceUsersBody
 import com.fopost.param.BoostPostParams
 import com.fopost.param.BulkAdStatusParams
@@ -44,8 +50,10 @@ import com.fopost.param.UpdateAdCampaignParams
 import com.fopost.param.UpdateAdSetParams
 import com.fopost.param.UpdateAudienceParams
 import com.fopost.param.UpdateNetworkAdParams
+import com.fopost.param.UploadConversionsParams
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
 
@@ -452,6 +460,113 @@ public class AdsResource internal constructor(private val http: ApiClient) {
                 "q" to q,
             ),
         )
+
+    /**
+     * TikTok's Business Centers. The one network-named read on this resource, because no other
+     * network groups ad accounts this way.
+     */
+    public suspend fun tiktokBusinessCenters(
+        connectionId: String,
+        workspaceId: String? = null,
+    ): List<AdBusinessCenter> =
+        http.callList(
+            "GET",
+            "/ads/tiktok/business-centers",
+            AdBusinessCenter.serializer(),
+            query = connection(workspaceId, connectionId),
+        )
+
+    /** The accounts an ad can run as; an identity id is a `pageId`. */
+    public suspend fun tiktokIdentities(
+        connectionId: String,
+        adAccountId: String,
+        workspaceId: String? = null,
+    ): List<AdIdentity> =
+        http.callList(
+            "GET",
+            "/ads/tiktok/identities",
+            AdIdentity.serializer(),
+            query = connection(workspaceId, connectionId) + ("ad_account_id" to adAccountId),
+        )
+
+    /** Posts already live under an identity, each a candidate Spark ad. */
+    public suspend fun sparkPosts(
+        connectionId: String,
+        adAccountId: String,
+        identityId: String,
+        workspaceId: String? = null,
+    ): List<SparkPost> =
+        http.callList(
+            "GET",
+            "/ads/spark-posts",
+            SparkPost.serializer(),
+            query = connection(workspaceId, connectionId) +
+                mapOf("ad_account_id" to adAccountId, "identity_id" to identityId),
+        )
+
+    /**
+     * Offline conversions against a pixel the ad account owns. Identifiers are hashed before
+     * anything leaves FoPost; returns how many the network accepted.
+     */
+    public suspend fun uploadConversions(params: UploadConversionsParams): Long {
+        val data = http.call(
+            "POST",
+            "/ads/conversions",
+            JsonObject.serializer(),
+            http.jsonBody(params, UploadConversionsParams.serializer()),
+        )
+        return data["accepted"]?.jsonPrimitive?.longOrNull ?: 0
+    }
+
+    /** One page of an ad's comments; pass `nextCursor` back as [after]. */
+    public suspend fun comments(
+        connectionId: String,
+        adId: String,
+        after: String? = null,
+        workspaceId: String? = null,
+    ): AdCommentsPage =
+        http.call(
+            "GET",
+            "/ads/comments",
+            AdCommentsPage.serializer(),
+            query = connection(workspaceId, connectionId) +
+                mapOf("ad_id" to adId, "after" to after),
+        )
+
+    /**
+     * Answer a comment on an ad; returns the reply's id on the network. Needs the `publish` scope
+     * as well as `ads`.
+     */
+    public suspend fun replyToComment(commentId: String, params: AdCommentParams): String {
+        val data = http.call(
+            "POST",
+            "/ads/comments/$commentId/reply",
+            JsonObject.serializer(),
+            http.jsonBody(params, AdCommentParams.serializer()),
+        )
+        return data["replyId"]?.jsonPrimitive?.contentOrNull.orEmpty()
+    }
+
+    /** Hide or show a comment on an ad. Needs the `publish` scope as well as `ads`. */
+    public suspend fun setCommentHidden(commentId: String, params: AdCommentParams) {
+        http.send(
+            "POST",
+            "/ads/comments/$commentId/hide",
+            http.jsonBody(params, AdCommentParams.serializer()),
+        )
+    }
+
+    /**
+     * Remove a comment from the ad on the network. One already gone succeeds. Needs the `publish`
+     * scope as well as `ads`.
+     */
+    public suspend fun deleteComment(commentId: String, params: AdCommentParams) {
+        http.send(
+            "DELETE",
+            "/ads/comments/$commentId",
+            http.jsonBody(params, AdCommentParams.serializer()),
+        )
+    }
 
     /** Every connection and Page with the Instant Forms on it. */
     public suspend fun leadForms(workspaceId: String? = null): List<LeadFormSource> =
