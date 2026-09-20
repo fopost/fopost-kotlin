@@ -15,6 +15,12 @@ import com.fopost.model.DiscordMessageRef
 import com.fopost.model.DiscordRole
 import com.fopost.model.DiscordScheduledEvent
 import com.fopost.model.DiscordThread
+import com.fopost.model.MetaGreeting
+import com.fopost.model.MetaGreetingText
+import com.fopost.model.MetaIceBreaker
+import com.fopost.model.MetaIceBreakers
+import com.fopost.model.MetaPersistentMenu
+import com.fopost.model.MetaPersistentMenuEntry
 import com.fopost.model.SlackChannel
 import com.fopost.model.SlackIdentity
 import com.fopost.model.SlackMember
@@ -23,16 +29,20 @@ import com.fopost.model.TelegramBotCommands
 import com.fopost.model.TelegramConnectCode
 import com.fopost.model.TelegramConnectStatus
 import com.fopost.model.TokenRefresh
+import com.fopost.model.WebhookSubscription
 import com.fopost.param.CreateAccountParams
+import com.fopost.param.CreateTelegramConnectCodeParams
 import com.fopost.param.DiscordDirectMessageParams
 import com.fopost.param.DiscordEventParams
 import com.fopost.param.DiscordRoleParams
 import com.fopost.param.DiscordThreadParams
+import com.fopost.param.MoveAccountParams
+import com.fopost.param.SetGreetingParams
+import com.fopost.param.SetIceBreakersParams
+import com.fopost.param.SetPersistentMenuParams
+import com.fopost.param.SetTelegramBotCommandsParams
 import com.fopost.param.SwitchDiscordChannelParams
 import com.fopost.param.UpdateDiscordIdentityParams
-import com.fopost.param.CreateTelegramConnectCodeParams
-import com.fopost.param.MoveAccountParams
-import com.fopost.param.SetTelegramBotCommandsParams
 import com.fopost.param.UpdateSlackIdentityParams
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.booleanOrNull
@@ -202,6 +212,70 @@ public class AccountsResource internal constructor(private val http: ApiClient) 
             // Built by hand so a null is sent, not dropped.
             http.jsonBody(buildJsonObject { params.fields.forEach { (key, value) -> put(key, value) } }),
         )
+
+    // ─── Meta messaging settings (Facebook Pages, Instagram) ─────────
+
+    /** The prompts shown before the first message. A network without them answers 400. */
+    public suspend fun getIceBreakers(accountId: String): MetaIceBreakers =
+        http.call("GET", "/accounts/$accountId/messaging/ice-breakers", MetaIceBreakers.serializer())
+
+    /** Replace the ice breakers, up to four. */
+    public suspend fun setIceBreakers(accountId: String, iceBreakers: List<MetaIceBreaker>): MetaIceBreakers =
+        http.call(
+            "PUT",
+            "/accounts/$accountId/messaging/ice-breakers",
+            MetaIceBreakers.serializer(),
+            http.jsonBody(SetIceBreakersParams(iceBreakers), SetIceBreakersParams.serializer()),
+        )
+
+    /** Clear the ice breakers. */
+    public suspend fun deleteIceBreakers(accountId: String): MetaIceBreakers =
+        http.call("DELETE", "/accounts/$accountId/messaging/ice-breakers", MetaIceBreakers.serializer())
+
+    /** The always-visible Messenger menu. Facebook Pages only; other networks answer 400. */
+    public suspend fun getPersistentMenu(accountId: String): MetaPersistentMenu =
+        http.call("GET", "/accounts/$accountId/messaging/persistent-menu", MetaPersistentMenu.serializer())
+
+    /** Replace the menu, one entry per locale, up to three items each. */
+    public suspend fun setPersistentMenu(
+        accountId: String,
+        menu: List<MetaPersistentMenuEntry>,
+    ): MetaPersistentMenu =
+        http.call(
+            "PUT",
+            "/accounts/$accountId/messaging/persistent-menu",
+            MetaPersistentMenu.serializer(),
+            http.jsonBody(SetPersistentMenuParams(menu), SetPersistentMenuParams.serializer()),
+        )
+
+    /** Clear the menu. */
+    public suspend fun deletePersistentMenu(accountId: String): MetaPersistentMenu =
+        http.call("DELETE", "/accounts/$accountId/messaging/persistent-menu", MetaPersistentMenu.serializer())
+
+    /** The text shown before a Messenger conversation starts. Facebook Pages only. */
+    public suspend fun getGreeting(accountId: String): MetaGreeting =
+        http.call("GET", "/accounts/$accountId/messaging/greeting", MetaGreeting.serializer())
+
+    /** Replace the greeting, one entry per locale, each up to 160 characters. */
+    public suspend fun setGreeting(accountId: String, greeting: List<MetaGreetingText>): MetaGreeting =
+        http.call(
+            "PUT",
+            "/accounts/$accountId/messaging/greeting",
+            MetaGreeting.serializer(),
+            http.jsonBody(SetGreetingParams(greeting), SetGreetingParams.serializer()),
+        )
+
+    /** Clear the greeting. */
+    public suspend fun deleteGreeting(accountId: String): MetaGreeting =
+        http.call("DELETE", "/accounts/$accountId/messaging/greeting", MetaGreeting.serializer())
+
+    /** What the network is delivering to the FoPost webhook for this account. */
+    public suspend fun getWebhookSubscription(accountId: String): WebhookSubscription =
+        http.call("GET", "/accounts/$accountId/webhook-subscription", WebhookSubscription.serializer())
+
+    /** Subscribe to every field this account needs, lapsed or not. */
+    public suspend fun resubscribeWebhook(accountId: String): WebhookSubscription =
+        http.call("POST", "/accounts/$accountId/webhook-subscription", WebhookSubscription.serializer())
 
     // ── Discord (bot connections) ───────────────────────────────────────
 

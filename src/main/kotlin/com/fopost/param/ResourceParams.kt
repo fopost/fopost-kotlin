@@ -89,6 +89,30 @@ public data class CreateTelegramConnectCodeParams(val workspaceId: String? = nul
 @Serializable
 public data class SetTelegramBotCommandsParams(val commands: List<com.fopost.model.TelegramBotCommand>)
 
+/** The full set of ice breakers for an account, up to four. */
+@Serializable
+public data class SetIceBreakersParams(
+    @SerialName("ice_breakers") val iceBreakers: List<com.fopost.model.MetaIceBreaker>,
+)
+
+/** The full persistent menu for an account, one entry per locale. */
+@Serializable
+public data class SetPersistentMenuParams(
+    @SerialName("persistent_menu") val persistentMenu: List<com.fopost.model.MetaPersistentMenuEntry>,
+)
+
+/** The full greeting for an account, one entry per locale. */
+@Serializable
+public data class SetGreetingParams(val greeting: List<com.fopost.model.MetaGreetingText>)
+
+/** The body of a Messenger hand-over; a null [appId] takes control back. */
+@Serializable
+public data class InboxHandoverParams(
+    @SerialName("account_id") val accountId: String,
+    @SerialName("app_id") val appId: String? = null,
+    val metadata: String? = null,
+)
+
 /**
  * A partial update to a Slack posting identity. A field never set keeps its value and `null` clears
  * it. Set [iconUrl] or [iconEmoji], not both; setting one clears the other.
