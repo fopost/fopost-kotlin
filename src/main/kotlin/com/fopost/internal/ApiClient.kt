@@ -178,6 +178,8 @@ internal class ApiClient(
     /** Decodes a JSON element a caller already pulled out of an envelope. */
     fun <T> decodeElement(deserializer: KSerializer<T>, payload: JsonElement): T =
         decode(deserializer, payload)
+    /** Peels the `{"data": ...}` wrapper for a caller that keeps the raw JSON. */
+    fun unwrap(element: JsonElement): JsonElement = unwrapEnvelope(element)
 
     private fun <T> decode(deserializer: KSerializer<T>, payload: JsonElement): T =
         try {
