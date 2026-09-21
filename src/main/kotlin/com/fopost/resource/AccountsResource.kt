@@ -4,6 +4,7 @@ import com.fopost.internal.ApiClient
 import com.fopost.model.Account
 import com.fopost.model.AccountAnalyticsHistory
 import com.fopost.model.AccountHealth
+import com.fopost.model.AccountPlatformMetrics
 import com.fopost.model.AccountValidation
 import com.fopost.model.AccountsHealthSummary
 import com.fopost.model.DiscordAck
@@ -123,6 +124,23 @@ public class AccountsResource internal constructor(private val http: ApiClient) 
     }
 
     /** Token validity for every account, with the counts rolled up. */
+    /**
+     * The numbers only this account's network reports, in its own vocabulary: ad-break
+     * earnings, story taps, a retention curve, the search terms behind a listing. Keyed by the
+     * platform's own metric names, read from the newest collected snapshot rather than fetched
+     * live. Needs the `analytics` scope.
+     *
+     * A network whose metric access has not been granted yet answers 503
+     * (`platform_metrics_unavailable`) rather than an empty set.
+     */
+    public suspend fun platformMetrics(accountId: String): AccountPlatformMetrics =
+        http.call(
+            "GET",
+            "/accounts/$accountId/insights",
+            AccountPlatformMetrics.serializer(),
+            query = mapOf("raw" to "true"),
+        )
+
     public suspend fun healthSummary(workspaceId: String? = null): AccountsHealthSummary =
         http.call(
             "GET",
