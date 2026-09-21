@@ -18,6 +18,7 @@ public object Platforms {
     public const val SLACK: String = "slack"
     public const val REDDIT: String = "reddit"
     public const val PINTEREST: String = "pinterest"
+    public const val SNAPCHAT: String = "snapchat"
     public const val TUMBLR: String = "tumblr"
     public const val DRIBBBLE: String = "dribbble"
     public const val MEWE: String = "mewe"
@@ -41,7 +42,7 @@ public object Platforms {
 
     public val ALL: List<String> = listOf(
         TWITTER, LINKEDIN, FACEBOOK, INSTAGRAM, INSTAGRAM_BUSINESS, TELEGRAM, TWITCH, DISCORD,
-        SLACK, REDDIT, PINTEREST, TUMBLR, DRIBBBLE, MEWE, TIKTOK, YOUTUBE, BLUESKY, THREADS,
+        SLACK, REDDIT, PINTEREST, SNAPCHAT, TUMBLR, DRIBBBLE, MEWE, TIKTOK, YOUTUBE, BLUESKY, THREADS,
         MASTODON, LEMMY, DEVTO, HASHNODE, MEDIUM, SUBSTACK, GOOGLE_BUSINESS, KICK, LISTMONK,
         WORDPRESS, NOSTR, WHOP, SKOOL,
     )
