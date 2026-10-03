@@ -9,7 +9,9 @@ import com.fopost.model.GoogleConversionAction
 import com.fopost.model.GoogleKeyword
 import com.fopost.model.GoogleKeywordIdea
 import com.fopost.model.GoogleLocalServicesLead
+import com.fopost.model.GoogleOptimizationScore
 import com.fopost.model.GoogleQueryResult
+import com.fopost.model.GoogleRecommendation
 import com.fopost.model.GoogleSearchTerm
 import com.fopost.model.GoogleSharedSet
 import com.fopost.param.AddGoogleNegativeKeywordsParams
@@ -20,6 +22,7 @@ import com.fopost.param.CreateGoogleAssetParams
 import com.fopost.param.CreateGoogleBidStrategyParams
 import com.fopost.param.CreateGoogleConversionActionParams
 import com.fopost.param.CreateGoogleKeywordParams
+import com.fopost.param.GoogleRecommendationsParams
 import com.fopost.param.CreateGoogleNegativeKeywordListParams
 import com.fopost.param.GoogleAdsScope
 import com.fopost.param.GoogleAdsScopeBody
@@ -243,6 +246,48 @@ public class GoogleAdsResource internal constructor(private val http: ApiClient)
             http.jsonBody(params, UploadGoogleConversionAdjustmentsParams.serializer()),
         )
 
+    // ── Recommendations ──
+
+    /** Google's own read on what the account should change next. */
+    public suspend fun recommendations(
+        scope: GoogleAdsScope,
+        types: List<String> = emptyList(),
+    ): List<GoogleRecommendation> =
+        http.callList(
+            "GET",
+            "/ads/google/recommendations",
+            GoogleRecommendation.serializer(),
+            query = query(scope, "types" to types.takeIf { it.isNotEmpty() }?.joinToString(",")),
+        )
+
+    /** The account's score and weight, and the score of each live campaign. */
+    public suspend fun optimizationScore(scope: GoogleAdsScope): GoogleOptimizationScore =
+        http.call(
+            "GET",
+            "/ads/google/optimization-score",
+            GoogleOptimizationScore.serializer(),
+            query = query(scope),
+        )
+
+    /**
+     * Applies each one, which changes what the live account serves or bids, and
+     * answers how many landed. Needs `publish` as well as `ads`.
+     */
+    public suspend fun applyRecommendations(params: GoogleRecommendationsParams): Int =
+        counted(
+            "/ads/google/recommendations/apply",
+            "applied",
+            http.jsonBody(params, GoogleRecommendationsParams.serializer()),
+        )
+
+    /** Hides each one so Google stops surfacing it. Needs `publish`. */
+    public suspend fun dismissRecommendations(params: GoogleRecommendationsParams): Int =
+        counted(
+            "/ads/google/recommendations/dismiss",
+            "dismissed",
+            http.jsonBody(params, GoogleRecommendationsParams.serializer()),
+        )
+
     // ── GAQL ──
 
     /** Run a read-only GAQL SELECT; rows come back as Google sends them. */
@@ -264,9 +309,11 @@ public class GoogleAdsResource internal constructor(private val http: ApiClient)
         return data["id"]?.jsonPrimitive?.contentOrNull.orEmpty()
     }
 
-    private suspend fun uploaded(path: String, body: okhttp3.RequestBody): Int {
+    private suspend fun uploaded(path: String, body: okhttp3.RequestBody): Int = counted(path, "uploaded", body)
+
+    private suspend fun counted(path: String, key: String, body: okhttp3.RequestBody): Int {
         val data = http.call("POST", path, JsonObject.serializer(), body)
-        return data["uploaded"]?.jsonPrimitive?.intOrNull ?: 0
+        return data[key]?.jsonPrimitive?.intOrNull ?: 0
     }
 
     private fun scopeBody(scope: GoogleAdsScope) =

@@ -138,6 +138,54 @@ public data class GoogleConversionAction(
 @Serializable
 public data class GoogleQueryResult(val rows: List<JsonElement> = emptyList())
 
+/**
+ * What Google projects applying a recommendation would change. A null field is
+ * one Google does not estimate for that recommendation.
+ */
+@Serializable
+public data class GoogleRecommendationImpact(
+    val baseClicks: Double? = null,
+    val potentialClicks: Double? = null,
+    /** The account's currency, in minor units. */
+    val baseCostMinor: Long? = null,
+    val potentialCostMinor: Long? = null,
+    val baseConversions: Double? = null,
+    val potentialConversions: Double? = null,
+)
+
+/**
+ * One of Google's own recommendations for the account. [id] is the Google
+ * resource name rather than the `~` form other objects use, because a
+ * recommendation is not an object you address again: it is what apply and
+ * dismiss take.
+ */
+@Serializable
+public data class GoogleRecommendation(
+    val id: String,
+    val type: String = "",
+    val campaignId: String? = null,
+    val adGroupId: String? = null,
+    val dismissed: Boolean = false,
+    val impact: GoogleRecommendationImpact? = null,
+)
+
+/** One campaign's optimization score. */
+@Serializable
+public data class GoogleOptimizationScoreCampaign(
+    val id: String,
+    val name: String = "",
+    val score: Double? = null,
+)
+
+/** Google's estimate of how well the account is set up, from 0 to 1. */
+@Serializable
+public data class GoogleOptimizationScore(
+    val score: Double? = null,
+    /** How much this account's score counts against others under the same manager. */
+    val weight: Double? = null,
+    val campaigns: List<GoogleOptimizationScoreCampaign> = emptyList(),
+)
+
 /** Google keyword match types. */
 public object GoogleMatchTypes {
     public const val EXACT: String = "EXACT"

@@ -5,6 +5,7 @@ import com.fopost.param.GoogleAdScheduleInput
 import com.fopost.param.GoogleAdsScope
 import com.fopost.param.GoogleAuthorizeParams
 import com.fopost.param.GoogleQueryParams
+import com.fopost.param.GoogleRecommendationsParams
 import com.fopost.param.SetGoogleAdScheduleParams
 import kotlin.test.assertEquals
 import kotlinx.coroutines.test.runTest
@@ -136,6 +137,54 @@ class GoogleAdsTest {
 
         assertEquals(1, result.rows.size)
         assertEquals("/v1/ads/insights/query", server.takeRequest().requestUrl?.encodedPath)
+    }
+
+    @Test
+    fun `recommendations join the types filter`() = runTest {
+        server.enqueue(
+            json(
+                200,
+                """{"data":[{"id":"customers/1234567890/recommendations/ABC~1","type":"KEYWORD",
+                   "campaignId":"1234567890~campaign~55","dismissed":false,
+                   "impact":{"baseClicks":10,"potentialClicks":25}}]}""",
+            ),
+        )
+
+        val rows = server.client().use { client ->
+            client.googleAds.recommendations(
+                GoogleAdsScope(connectionId = "conn_1", customerId = "1234567890"),
+                types = listOf("KEYWORD", "TARGET_CPA_OPT_IN"),
+            )
+        }
+
+        assertEquals("KEYWORD", rows[0].type)
+        assertEquals(25.0, rows[0].impact?.potentialClicks)
+        assertEquals(
+            "KEYWORD,TARGET_CPA_OPT_IN",
+            server.takeRequest().requestUrl?.queryParameter("types"),
+        )
+    }
+
+    @Test
+    fun `apply recommendations sends the ids`() = runTest {
+        server.enqueue(json(200, """{"data":{"applied":1}}"""))
+
+        val applied = server.client().use { client ->
+            client.googleAds.applyRecommendations(
+                GoogleRecommendationsParams(
+                    workspaceId = "ws_1",
+                    connectionId = "conn_1",
+                    customerId = "1234567890",
+                    ids = listOf("customers/1234567890/recommendations/ABC~1"),
+                ),
+            )
+        }
+
+        assertEquals(1, applied)
+        assertEquals(
+            "/v1/ads/google/recommendations/apply",
+            server.takeRequest().requestUrl?.encodedPath,
+        )
     }
 
     @Test
