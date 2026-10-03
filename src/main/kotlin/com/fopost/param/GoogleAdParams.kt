@@ -272,3 +272,13 @@ public data class GoogleQueryParams(
     val query: String,
     val workspaceId: String? = null,
 )
+
+/** Apply or dismiss recommendations on one account. */
+@Serializable
+public data class GoogleRecommendationsParams(
+    val workspaceId: String,
+    val connectionId: String,
+    val customerId: String,
+    /** Google resource names, each on [customerId]. */
+    val ids: List<String>,
+)
