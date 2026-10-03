@@ -182,6 +182,60 @@ public data class TargetingOption(
     val detail: String? = null,
 )
 
+/** A Business Center, or the network's equivalent grouping of ad accounts. */
+@Serializable
+public data class AdBusinessCenter(
+    val id: String? = null,
+    val name: String? = null,
+    val role: String? = null,
+)
+
+/**
+ * The account an ad runs as. Meta calls it a Page, TikTok an identity; an identity id is what
+ * every route calls a `pageId`. [type] is the network's own identity kind, e.g. `CUSTOMIZED_USER`.
+ */
+@Serializable
+public data class AdIdentity(
+    val id: String? = null,
+    val type: String? = null,
+    val name: String? = null,
+    val avatarUrl: String? = null,
+)
+
+/** A post already live on the network, offered as the source of a Spark ad. */
+@Serializable
+public data class SparkPost(
+    val id: String? = null,
+    val identityId: String? = null,
+    val caption: String? = null,
+    val thumbnailUrl: String? = null,
+    val createdAt: String? = null,
+    val views: Long? = null,
+)
+
+/** A comment on an ad, read live from the network and never stored. */
+@Serializable
+public data class AdComment(
+    val id: String? = null,
+    val adId: String? = null,
+    val text: String = "",
+    val authorName: String? = null,
+    val authorAvatarUrl: String? = null,
+    val createdAt: String? = null,
+    val likes: Long = 0,
+    val replyCount: Long = 0,
+    val hidden: Boolean = false,
+    /** The comment this one answers, when it is not on the ad itself. */
+    val parentId: String? = null,
+)
+
+/** One page of an ad's comments; pass [nextCursor] back as `after`. */
+@Serializable
+public data class AdCommentsPage(
+    val comments: List<AdComment> = emptyList(),
+    val nextCursor: String? = null,
+)
+
 /** An Instant Form on a Page. */
 @Serializable
 public data class LeadForm(
