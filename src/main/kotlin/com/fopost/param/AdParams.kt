@@ -63,6 +63,11 @@ public data class CreateAdParams(
     val paused: Boolean? = null,
     /** Query string appended to every link in the ad, e.g. `utm_source=meta&utm_medium=paid`. */
     val urlTags: String? = null,
+    /**
+     * A post already live on the network, from `ads.sparkPosts(...)`. Runs it as a Spark ad, so
+     * [text], [headline] and [mediaUrl] are ignored. Needs the network's `sparkAds` capability.
+     */
+    val sparkPostId: String? = null,
 )
 
 /**
@@ -138,6 +143,48 @@ public data class CreateAdCampaignParams(
     val name: String,
     val goal: String,
     val paused: Boolean? = null,
+    /**
+     * Hands targeting and creative rotation to the network. Needs its `smartPlus` capability.
+     */
+    val smartPlus: Boolean? = null,
+)
+
+/** One offline conversion. Identifiers are hashed before anything leaves FoPost. */
+@Serializable
+public data class ConversionEvent(
+    val eventName: String,
+    /** ISO 8601. */
+    val occurredAt: String,
+    val email: String? = null,
+    val phone: String? = null,
+    /** Account currency, minor units. */
+    val valueMinor: Long? = null,
+    val currency: String? = null,
+    val orderId: String? = null,
+)
+
+/** Offline conversions against a pixel the ad account owns. */
+@Serializable
+public data class UploadConversionsParams(
+    val workspaceId: String,
+    val connectionId: String,
+    val adAccountId: String,
+    /** A pixel the ad account owns, from `ads.audiences(...)`. */
+    val pixelId: String,
+    /** Up to 1000 per call. */
+    val events: List<ConversionEvent>,
+)
+
+/** Scopes a comment write; the comment id travels in the path. */
+@Serializable
+public data class AdCommentParams(
+    val workspaceId: String,
+    val connectionId: String,
+    val adId: String,
+    /** The reply, on `replyToComment` only. */
+    val text: String? = null,
+    /** The new state, on `setCommentHidden` only. */
+    val hidden: Boolean? = null,
 )
 
 /** Changes to a campaign. [status] is `active` or `paused`. */
@@ -354,11 +401,12 @@ public data class UpdateConversionRuleParams(
 internal data class ConversionAssociationBody(val campaignId: String)
 
 /**
- * One conversion sent back to the network. It needs an [email] or a [clickId]; the address is
- * hashed inside the API and nothing about an event is stored.
+ * One conversion sent back through a network's conversions API, against a rule rather than a
+ * pixel. It needs an [email] or a [clickId]; the address is hashed inside the API and nothing
+ * about an event is stored.
  */
 @Serializable
-public data class ConversionEvent(
+public data class ConversionApiEvent(
     /** Epoch milliseconds. */
     val happenedAt: Long,
     val valueMinor: Long? = null,
@@ -371,7 +419,7 @@ public data class ConversionEvent(
 )
 
 @Serializable
-internal data class ConversionEventsBody(val events: List<ConversionEvent>)
+internal data class ConversionEventsBody(val events: List<ConversionApiEvent>)
 
 /** What an ad-library search narrows on. Dates are `YYYY-MM-DD`. */
 public data class AdLibraryParams(

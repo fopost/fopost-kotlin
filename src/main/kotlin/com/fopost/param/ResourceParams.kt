@@ -1,6 +1,7 @@
 package com.fopost.param
 
 import java.time.LocalDate
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 
@@ -87,6 +88,30 @@ public data class CreateTelegramConnectCodeParams(val workspaceId: String? = nul
 /** The full command menu for a Telegram chat, 1-100 commands. */
 @Serializable
 public data class SetTelegramBotCommandsParams(val commands: List<com.fopost.model.TelegramBotCommand>)
+
+/** The full set of ice breakers for an account, up to four. */
+@Serializable
+public data class SetIceBreakersParams(
+    @SerialName("ice_breakers") val iceBreakers: List<com.fopost.model.MetaIceBreaker>,
+)
+
+/** The full persistent menu for an account, one entry per locale. */
+@Serializable
+public data class SetPersistentMenuParams(
+    @SerialName("persistent_menu") val persistentMenu: List<com.fopost.model.MetaPersistentMenuEntry>,
+)
+
+/** The full greeting for an account, one entry per locale. */
+@Serializable
+public data class SetGreetingParams(val greeting: List<com.fopost.model.MetaGreetingText>)
+
+/** The body of a Messenger hand-over; a null [appId] takes control back. */
+@Serializable
+public data class InboxHandoverParams(
+    @SerialName("account_id") val accountId: String,
+    @SerialName("app_id") val appId: String? = null,
+    val metadata: String? = null,
+)
 
 /**
  * A partial update to a Slack posting identity. A field never set keeps its value and `null` clears
@@ -195,4 +220,66 @@ public data class PresignUploadParams(
     val filename: String,
     val mimeType: String,
     val size: Long,
+)
+
+/**
+ * A partial update to the nickname and avatar a Discord bot connection wears. A field never set
+ * keeps its value and `null` clears it.
+ */
+public class UpdateDiscordIdentityParams {
+
+    internal val fields: MutableMap<String, String?> = linkedMapOf()
+
+    /** 1-32 characters, or `null` for the application's own name. */
+    public fun username(value: String?): UpdateDiscordIdentityParams = apply { fields["username"] = value }
+
+    /** An http(s) image URL, or `null` to clear it. */
+    public fun avatarUrl(value: String?): UpdateDiscordIdentityParams = apply { fields["avatar_url"] = value }
+}
+
+/**
+ * A Discord scheduled event being created or updated. Give `channelId` for an event in a voice or
+ * stage channel, or `location` with an `endTime` for one elsewhere. On an update, a null field is
+ * left as it is.
+ */
+@Serializable
+public data class DiscordEventParams(
+    val name: String? = null,
+    val description: String? = null,
+    @SerialName("start_time") val startTime: String? = null,
+    @SerialName("end_time") val endTime: String? = null,
+    @SerialName("channel_id") val channelId: String? = null,
+    val location: String? = null,
+    /** scheduled, active, completed or canceled; only meaningful on an update. */
+    val status: String? = null,
+)
+
+/** A Discord role being created or updated. */
+@Serializable
+public data class DiscordRoleParams(
+    val name: String? = null,
+    /** An RGB integer, e.g. 5793266. */
+    val color: Int? = null,
+    /** Show members with this role separately in the member list. */
+    val hoist: Boolean? = null,
+    val mentionable: Boolean? = null,
+    /** Discord's permission bitfield as a decimal string. */
+    val permissions: String? = null,
+)
+
+/** A thread being started on a Discord message. */
+@Serializable
+public data class DiscordThreadParams(
+    val name: String,
+    /** Minutes of inactivity before it archives: 60, 1440, 4320 or 10080. */
+    @SerialName("auto_archive_duration") val autoArchiveDuration: Int? = null,
+)
+
+@Serializable
+internal data class SwitchDiscordChannelParams(@SerialName("channel_id") val channelId: String)
+
+@Serializable
+internal data class DiscordDirectMessageParams(
+    @SerialName("member_id") val memberId: String,
+    val content: String,
 )

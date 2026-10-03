@@ -46,7 +46,10 @@ public data class InboxListParams(
     )
 }
 
-/** Filters for listing comment threads. [kind] is `comments` (the default) or `mentions`. */
+/**
+ * Filters for listing comment threads. [kind] is `comments` (the default), `mentions`, or
+ * `reviews` for one row per review left on the business.
+ */
 public data class InboxThreadListParams(
     val workspaceId: String? = null,
     val kind: String? = null,

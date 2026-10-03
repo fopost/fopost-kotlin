@@ -6,12 +6,14 @@ import com.fopost.model.InboxApproval
 import com.fopost.model.InboxApprovalDecision
 import com.fopost.model.InboxConversation
 import com.fopost.model.InboxConversationStart
+import com.fopost.model.InboxHandover
 import com.fopost.model.InboxItem
 import com.fopost.model.InboxPlatform
 import com.fopost.model.InboxRefreshResult
 import com.fopost.model.InboxReplyResult
 import com.fopost.model.InboxThread
 import com.fopost.model.Page
+import com.fopost.param.InboxHandoverParams
 import com.fopost.param.InboxConversationListParams
 import com.fopost.param.InboxListParams
 import com.fopost.param.InboxReplyBody
@@ -29,14 +31,19 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 
-/** Comments, mentions and direct messages on connected accounts. Needs the `inbox` scope. */
+/**
+ * Comments, mentions, reviews and direct messages on connected accounts. Needs the `inbox` scope.
+ */
 public class InboxResource internal constructor(private val http: ApiClient) {
 
     /** One page of items, newest first. `meta.perPage` and `meta.total` are set. */
     public suspend fun list(params: InboxListParams = InboxListParams()): Page<InboxItem> =
         http.page("/inbox", InboxItem.serializer(), params.toQuery())
 
-    /** One row per post with comments; `kind = "mentions"` for posts the account was tagged in. */
+    /**
+     * One row per post with comments; `kind = "mentions"` for posts the account was tagged in,
+     * `kind = "reviews"` for one row per review left on the business.
+     */
     public suspend fun threads(params: InboxThreadListParams = InboxThreadListParams()): Page<InboxThread> =
         http.page("/inbox/posts", InboxThread.serializer(), params.toQuery())
 
@@ -182,6 +189,26 @@ public class InboxResource internal constructor(private val http: ApiClient) {
         )
         return data["typing"]?.jsonPrimitive?.booleanOrNull ?: false
     }
+
+    /**
+     * Pass a Messenger thread to another Meta app, or take it back when [appId] is null.
+     * Also needs the `publish` scope.
+     */
+    public suspend fun handover(
+        conversationId: String,
+        accountId: String,
+        appId: String? = null,
+        metadata: String? = null,
+    ): InboxHandover =
+        http.call(
+            "POST",
+            "/inbox/conversations/$conversationId/handover",
+            InboxHandover.serializer(),
+            http.jsonBody(
+                InboxHandoverParams(accountId, appId, metadata),
+                InboxHandoverParams.serializer(),
+            ),
+        )
 
     /** Replies an automation or the agent drafted that a person still has to send. */
     public suspend fun listApprovals(workspaceId: String? = null): List<InboxApproval> =

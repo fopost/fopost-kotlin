@@ -1,7 +1,7 @@
 package com.fopost
 
 import com.fopost.param.AdCompany
-import com.fopost.param.ConversionEvent
+import com.fopost.param.ConversionApiEvent
 import com.fopost.param.MetaAuthorizeParams
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -97,7 +97,7 @@ class AdsNetworksTest {
                 ruleId = "urn:li:conversion:9",
                 workspaceId = "ws_1",
                 connectionId = "conn_1",
-                events = listOf(ConversionEvent(happenedAt = 1758326400000, email = "buyer@example.test")),
+                events = listOf(ConversionApiEvent(happenedAt = 1758326400000, email = "buyer@example.test")),
             )
         }
 
