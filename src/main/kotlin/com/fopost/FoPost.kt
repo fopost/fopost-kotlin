@@ -9,6 +9,7 @@ import com.fopost.resource.ActivityResource
 import com.fopost.resource.AdsResource
 import com.fopost.resource.AnalyticsResource
 import com.fopost.resource.AutomationsResource
+import com.fopost.resource.BlogResource
 import com.fopost.resource.CommunitiesResource
 import com.fopost.resource.BroadcastsResource
 import com.fopost.resource.ContactsResource
@@ -139,6 +140,9 @@ public class FoPost @JvmOverloads constructor(
 
     /** Manage a connected Google Business Profile location. */
     public val googleBusiness: GoogleBusinessResource = GoogleBusinessResource(api)
+
+    /** The blog: keyword plan, articles and the publishing target. */
+    public val blog: BlogResource = BlogResource(api)
 
     /**
      * Call an endpoint this SDK does not wrap yet, authenticated and retried like any other call.
