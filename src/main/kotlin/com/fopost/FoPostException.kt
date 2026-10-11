@@ -119,6 +119,15 @@ public class ApiException internal constructor(
     rateLimit: RateLimit? = null,
 ) : FoPostException(message, status, code, body, rateLimit)
 
+/**
+ * A webhook delivery that [Webhooks.verify] refused. [code] is `missing_signature`,
+ * `invalid_signature`, `stale_timestamp` or `invalid_payload`.
+ */
+public class WebhookVerificationException internal constructor(
+    message: String,
+    code: String,
+) : FoPostException(message, 0, code, null, null)
+
 /** The request never got an answer: a connection failure, a timeout, or an unreadable body. */
 public class TransportException internal constructor(
     message: String,
