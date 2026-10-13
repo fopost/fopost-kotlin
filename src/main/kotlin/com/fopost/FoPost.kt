@@ -111,7 +111,8 @@ public class FoPost @JvmOverloads constructor(
     /** The API root every request is sent to. */
     public val baseUrl: String get() = api.baseUrl
 
-    public val posts: PostsResource = PostsResource(api)
+    public val media: MediaResource = MediaResource(api)
+    public val posts: PostsResource = PostsResource(api, media)
     public val workspaces: WorkspacesResource = WorkspacesResource(api)
     public val accounts: AccountsResource = AccountsResource(api)
     public val accountGroups: AccountGroupsResource = AccountGroupsResource(api)
@@ -123,7 +124,6 @@ public class FoPost @JvmOverloads constructor(
     public val webhooks: WebhooksResource = WebhooksResource(api)
     public val analytics: AnalyticsResource = AnalyticsResource(api)
     public val automations: AutomationsResource = AutomationsResource(api)
-    public val media: MediaResource = MediaResource(api)
     public val inbox: InboxResource = InboxResource(api)
     public val contacts: ContactsResource = ContactsResource(api)
     public val broadcasts: BroadcastsResource = BroadcastsResource(api)
