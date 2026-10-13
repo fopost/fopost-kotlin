@@ -2,6 +2,7 @@ package com.fopost.internal
 
 import com.fopost.ApiException
 import com.fopost.AuthenticationException
+import com.fopost.FileTooLargeException
 import com.fopost.FoPostException
 import com.fopost.NotFoundException
 import com.fopost.PaymentRequiredException
@@ -226,6 +227,7 @@ internal class ApiClient(
             status == 402 -> PaymentRequiredException(message, status, code, body, limit)
             status == 403 -> PermissionDeniedException(message, status, code, body, limit)
             status == 404 -> NotFoundException(message, status, code, body, limit)
+            status == 413 -> FileTooLargeException(message, status, code, body, limit)
             status == 429 -> RateLimitException(message, status, code, body, limit, retryAfter)
             status >= 500 -> ServerException(message, status, code, body, limit)
             else -> ApiException(message, status, code, body, limit)
