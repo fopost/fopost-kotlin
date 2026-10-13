@@ -33,7 +33,6 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
@@ -148,12 +147,11 @@ internal class ApiClient(
     }
 
     /** A raw PUT to a presigned URL: no API key, no envelope, no retry. */
-    suspend fun putRaw(url: String, headers: Map<String, String>, content: ByteArray) {
-        val contentType = headers.entries.firstOrNull { it.key.equals("Content-Type", ignoreCase = true) }?.value
+    suspend fun putRaw(url: String, headers: Map<String, String>, content: RequestBody) {
         val request = Request.Builder()
             .url(url)
             .apply { headers.forEach { (name, value) -> header(name, value) } }
-            .put(content.toRequestBody(contentType?.toMediaTypeOrNull()))
+            .put(content)
             .build()
         val response = try {
             http.newCall(request).await()

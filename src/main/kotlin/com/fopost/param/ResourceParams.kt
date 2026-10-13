@@ -245,13 +245,31 @@ public data class NativePostsParams(
     )
 }
 
-/** A direct upload being reserved. `size` is the exact byte count that will be PUT. */
+/**
+ * A direct upload being reserved. `size` is the exact byte count that will be PUT, up to the
+ * account's `maxFileBytes` from `media.limits()`.
+ */
 @Serializable
 public data class PresignUploadParams(
     val workspaceId: String,
     val filename: String,
     val mimeType: String,
     val size: Long,
+    val folderId: String? = null,
+    /** `chat` marks a file that came out of the agent chat. */
+    val origin: String? = null,
+    /** `logo`, `product`, `person`, or `background`. */
+    val brandRole: String? = null,
+    val brandVoiceId: String? = null,
+    /** Required when [brandRole] is `person`. */
+    val personConsent: PersonConsent? = null,
+)
+
+/** Who agreed to appear in a `person` brand asset, and what they agreed to. */
+@Serializable
+public data class PersonConsent(
+    val subject: String,
+    val statement: String,
 )
 
 /**
