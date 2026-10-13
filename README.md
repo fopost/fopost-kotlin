@@ -164,7 +164,7 @@ client.posts.listAll(PostListParams(workspaceId = workspaceId))
 | `webhooks`    | `list`, `create`, `update`, `delete`, `test`                                                                                                                                                                                                                      |
 | `analytics`   | `overview`, `timeSeries`, `topPosts`, `labels`, `postsTable`, `postingStreak`, `demographics`, `collect`, `decay`, `frequency`, `timeline`, `changes`, `collectPost`, `nativePosts`                                                                               |
 | `automations` | `list`, `get`, `create`, `update`, `delete`, `toggle`, `runs`, `run`, `trigger`, `stats`                                                                                                                                                                          |
-| `media`       | `list`, `upload`, `presign`, `complete`, `uploadDirect`, `delete`                                                                                                                                                                                                |
+| `media`       | `list`, `limits`, `upload`, `presign`, `complete`, `uploadDirect`, `delete`                                                                                                                                                                                      |
 | `inbox`       | `list`, `threads`, `conversations`, `unreadCount`, `accounts`, `platforms`, `markThreadRead`, `refresh`, `update`, `editComment`, `reply`, `hide`, `unhide`, `delete`, `like`, `unlike`, `pin`, `unpin`, `react`, `startConversation`, `setTyping`, `handover`, `listApprovals`, `approveReply`, `rejectReply` |
 | `contacts`    | `list`, `get`, `create`, `update`, `delete`, `conversations`, `import`, `listFields`, `createField`, `updateField`, `deleteField`, `conversationAnalytics` |
 | `broadcasts`  | `list`, `get`, `create`, `update`, `delete`, `send`, `cancel`, `recipients` |
@@ -201,12 +201,47 @@ client.posts.create(
 )
 ```
 
-For a large file, a direct upload sends the bytes straight to storage instead of through the
-API. `uploadDirect` presigns, PUTs the bytes, and completes in one call; `presign` and `complete`
-are the two halves for when you PUT the bytes yourself:
+Or hand the files to the post itself. Up to five files go on `create` or `update`, land in the
+workspace library, and attach to the first content block. Small files travel in the same request;
+a file over the multipart ceiling is uploaded directly first. Either way you get one post back:
 
 ```kotlin
-val file = client.media.uploadDirect("ws_1", "clip.mp4", "video/mp4", File("clip.mp4").readBytes())
+client.posts.create(
+    CreatePostParams(workspaceId = workspaceId, accounts = listOf(accountId), content = contentOf("Numbers are in")),
+    files = listOf(UploadFile(File("chart.png")), UploadFile(File("clip.mp4"))),
+)
+
+client.posts.update(postId, UpdatePostParams(), files = listOf(UploadFile("clip.mp4", "video/mp4", stream, size)))
+```
+
+An `UploadFile` streams from a `File`, or from an `InputStream` of known size, so a large upload
+never sits in memory.
+
+### Upload limits
+
+How big a file may be depends on the account: it grows with connected accounts, or sits at the top
+with the Large Uploads add-on. `limits` answers the per-file ceiling by any route, the multipart
+ceiling (bigger files need a direct upload), the file count per request, and the next tier:
+
+```kotlin
+val limits = client.media.limits(workspaceId)
+println("${limits.maxFileBytes} per file, ${limits.multipartMaxFileBytes} per multipart file")
+limits.nextTier?.let { println("${it.maxFileBytes} once ${it.upToAccounts} accounts are connected") }
+```
+
+A file over the ceiling answers `413` and arrives as `FileTooLargeException`, with `maxFileBytes`,
+`fileBytes`, and `upgradeUrl`.
+
+### Direct upload
+
+A direct upload sends the bytes straight to storage instead of through the API, up to the
+account's `maxFileBytes`. `uploadDirect` presigns, streams the file to the returned url, and
+completes in one call; `presign` and `complete` are the two halves for when you PUT the bytes
+yourself. `folderId`, `origin`, `brandRole`, `brandVoiceId`, and `personConsent` are optional on
+both:
+
+```kotlin
+val file = client.media.uploadDirect("ws_1", UploadFile(File("clip.mp4")), folderId = "fld_1")
 ```
 
 ## Validation
@@ -332,6 +367,7 @@ try {
 | 402      | `PaymentRequiredException`  |
 | 403      | `PermissionDeniedException` |
 | 404      | `NotFoundException`         |
+| 413      | `FileTooLargeException`     |
 | 429      | `RateLimitException`        |
 | 5xx      | `ServerException`           |
 | other    | `ApiException`              |
