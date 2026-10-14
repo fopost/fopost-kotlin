@@ -174,6 +174,7 @@ client.posts.listAll(PostListParams(workspaceId = workspaceId))
 | `inbox`       | `list`, `threads`, `conversations`, `unreadCount`, `accounts`, `platforms`, `markThreadRead`, `refresh`, `update`, `editComment`, `reply`, `hide`, `unhide`, `delete`, `like`, `unlike`, `pin`, `unpin`, `react`, `startConversation`, `setTyping`, `listApprovals`, `approveReply`, `rejectReply` |
 | `ads`         | `list`, `external`, `boostable`, `connections`, `sources`, `providers`, `authorize`, `deleteConnection`, `boost`, `create`, `refresh`, `setStatus`, `delete`, `accountTree`, `createCampaign`, `campaign`, `updateCampaign`, `deleteCampaign`, `duplicateCampaign`, `createAdSet`, `adSet`, `updateAdSet`, `deleteAdSet`, `duplicateAdSet`, `createNetworkAd`, `networkAd`, `updateNetworkAd`, `deleteNetworkAd`, `duplicateNetworkAd`, `bulkSetStatus`, `creatives`, `createCreative`, `creative`, `deleteCreative`, `estimateReach`, `insights`, `adInsights`, `audiences`, `createAudience`, `audience`, `updateAudience`, `deleteAudience`, `addAudienceUsers`, `addAudienceCompanies`, `searchTargeting`, `leadForms`, `createLeadForm`, `leadForm`, `archiveLeadForm`, `leads`, `leadsFeed`, `leadPages`, `subscribeLeadPage`, `unsubscribeLeadPage`, `bidPricing`, `supplyForecast`, `conversionRules`, `createConversionRule`, `conversionRule`, `updateConversionRule`, `deleteConversionRule`, `attachConversionRule`, `detachConversionRule`, `conversionMetrics`, `sendConversionEvents` |
 | `googleBusiness` | `getLocation`, `updateLocation`, `getAttributes`, `updateAttributes`, `getMenus`, `replaceMenus`, `getServices`, `replaceServices`, `listMedia`, `addMedia`, `deleteMedia`, `listPlaceActions`, `createPlaceAction`, `updatePlaceAction`, `deletePlaceAction`, `getVerificationOptions`, `startVerification`, `completeVerification`, `getPerformance`, `getSearchKeywords`, `assign` |
+| `blog`        | `getSettings`, `updateSettings`, `rotateWebsiteSecret`, `testWebsite`, `listKeywords`, `planKeywords`, `addKeyword`, `updateKeyword`, `deleteKeyword`, `listArticles`, `requestArticle`, `getArticle`, `updateArticle`, `regenerateArticle`, `publishArticle`, `rejectArticle`, `deleteArticle` |
 | `validate`    | `post`, `length`, `media`                                                                                                                                                                                                                                        |
 | `activity`    | `list`                                                                                                                                                                                                                                                           |
 
@@ -318,6 +319,18 @@ println(hook.secret)
 client.webhooks.test(hook.id!!)
 ```
 
+Verify a delivery with `Webhooks.verify` over the raw request bytes, never a re-serialised body.
+The timestamped signature is checked when `X-FoPost-Timestamp` is present (300 s tolerance) and
+the plain body signature otherwise; a refused delivery throws `WebhookVerificationException`.
+
+```kotlin
+val envelope = Webhooks.verify(rawBody, headers, secret)
+if (envelope.event == WebhookEvents.ARTICLE_PUBLISHED) {
+    val article = envelope.dataAs<BlogArticlePublished>()
+    println(article.publishedUrl)
+}
+```
+
 ## Configuration
 
 ```kotlin
@@ -419,6 +432,27 @@ client.sequences.enroll(sequence.id!!, EnrollParams(contactIds = listOf(contactI
 // Nothing further fires for them.
 client.sequences.unenroll(sequence.id!!, listOf(contactId))
 ```
+
+## Blog
+
+The blog plans keywords, writes articles from them and publishes to a target: the product blog, a
+connected account, or your own website, which receives each article as a signed `article.published`
+webhook. An article goes to a website; a post goes to a social network.
+
+```kotlin
+val article = client.blog.requestArticle(
+    workspaceId,
+    CreateBlogArticleParams(keyword = "social media calendar", instructions = "Lead with a template."),
+)
+
+// Written in the background: poll until it leaves `queued` and `writing`.
+val draft = client.blog.getArticle(workspaceId, article.id!!)
+client.blog.publishArticle(workspaceId, draft.id!!)
+```
+
+`planKeywords`, `requestArticle` and `regenerateArticle` spend AI credits and answer `402` when the
+balance ran out; `publishArticle` answers `409` with `no_target` until the settings name a target.
+Setting `websiteUrl` through `updateSettings` returns the website secret once, on that call only.
 
 ## Scopes
 

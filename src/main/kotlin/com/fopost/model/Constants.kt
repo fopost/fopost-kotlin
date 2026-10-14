@@ -76,9 +76,10 @@ public object WebhookEvents {
     public const val DELIVERY_FAILED: String = "delivery.failed"
     public const val DELIVERY_DELAYED: String = "delivery.delayed"
     public const val ACCOUNT_HEALTH_CHANGED: String = "account.health_changed"
+    public const val ARTICLE_PUBLISHED: String = "article.published"
 
     public val ALL: List<String> = listOf(
         POST_PUBLISHED, POST_FAILED, POST_PARTIALLY_FAILED, DELIVERY_PUBLISHED,
-        DELIVERY_FAILED, DELIVERY_DELAYED, ACCOUNT_HEALTH_CHANGED,
+        DELIVERY_FAILED, DELIVERY_DELAYED, ACCOUNT_HEALTH_CHANGED, ARTICLE_PUBLISHED,
     )
 }
