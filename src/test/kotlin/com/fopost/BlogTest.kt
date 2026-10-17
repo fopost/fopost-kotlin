@@ -1,13 +1,16 @@
 package com.fopost
 
 import com.fopost.model.BlogArticleStatus
+import com.fopost.model.BlogGoal
 import com.fopost.model.BlogKeywordStatus
+import com.fopost.model.BlogPlanRunStatus
 import com.fopost.model.BlogTargetKind
 import com.fopost.param.BlogArticleListParams
 import com.fopost.param.BlogKeywordListParams
 import com.fopost.param.CreateBlogArticleParams
 import com.fopost.param.CreateBlogKeywordParams
 import com.fopost.param.PlanBlogKeywordsParams
+import com.fopost.param.SuggestBlogSeedsParams
 import com.fopost.param.UpdateBlogArticleParams
 import com.fopost.param.UpdateBlogKeywordParams
 import com.fopost.param.UpdateBlogSettingsParams
@@ -32,17 +35,20 @@ class BlogTest {
 
     private val settings = """
         {"siteUrl":"https://yourbrand.com","topic":"Social scheduling","audience":"Marketers",
+         "goal":"signups","focusTopics":"scheduling, analytics","avoidTopics":"politics",
          "language":"en","locationCode":2840,"cadencePerWeek":2,"reviewHoldDays":3,
-         "autoPublish":false,"imageTier":"standard","inBodyImages":1,"minWords":900,"maxWords":1500,
+         "imageTier":"standard","inBodyImages":1,"minWords":900,"maxWords":1500,
          "brandVoiceId":null,"targetKind":"website","targetAccountId":null,"targetPlatform":null,
          "websiteUrl":"https://yourbrand.com/hooks/fopost","hasWebsiteSecret":true,
+         "planRun":{"status":"done","error":null,"added":12,"finishedAt":"2026-10-11T09:05:00Z"},
          "keywordDataAvailable":true,"updatedAt":"2026-10-11T09:00:00Z"}
     """.trimIndent()
 
     private val keyword = """
         {"id":"kw_1","keyword":"social media calendar","searchVolume":5400,"difficulty":42,
          "cpc":1.25,"intent":"informational","source":"provider","status":"planned",
-         "plannedFor":"2026-10-20","createdAt":"2026-10-11T09:00:00Z"}
+         "plannedFor":"2026-10-20","fitReason":"Buyers search it before choosing a tool",
+         "createdAt":"2026-10-11T09:00:00Z"}
     """.trimIndent()
 
     private val article = """
@@ -74,10 +80,19 @@ class BlogTest {
             val current = it.blog.getSettings("w1")
             assertEquals(BlogTargetKind.WEBSITE, current.targetKind)
             assertEquals(true, current.hasWebsiteSecret)
+            assertEquals(BlogGoal.SIGNUPS, current.goal)
+            assertEquals("politics", current.avoidTopics)
+            assertEquals(BlogPlanRunStatus.DONE, current.planRun?.status)
+            assertEquals(12, current.planRun?.added)
 
             val updated = it.blog.updateSettings(
                 "w1",
-                UpdateBlogSettingsParams(websiteUrl = "https://yourbrand.com/hooks/fopost", cadencePerWeek = 2),
+                UpdateBlogSettingsParams(
+                    websiteUrl = "https://yourbrand.com/hooks/fopost",
+                    cadencePerWeek = 2,
+                    goal = BlogGoal.LEADS,
+                    focusTopics = "scheduling",
+                ),
             )
             assertEquals("whsec_first", updated.websiteSecret)
             assertEquals(2, updated.settings.cadencePerWeek)
@@ -94,6 +109,8 @@ class BlogTest {
         assertEquals("w1", body["workspaceId"]?.jsonPrimitive?.content)
         assertEquals("https://yourbrand.com/hooks/fopost", body["websiteUrl"]?.jsonPrimitive?.content)
         assertEquals(2, body["cadencePerWeek"]?.jsonPrimitive?.content?.toInt())
+        assertEquals("leads", body["goal"]?.jsonPrimitive?.content)
+        assertEquals("scheduling", body["focusTopics"]?.jsonPrimitive?.content)
         // An unset field stays out of the patch, so the server keeps its own value.
         assertFalse(body.containsKey("topic"))
     }
@@ -130,6 +147,7 @@ class BlogTest {
             assertEquals(5400, listed.single().searchVolume)
             assertEquals(BlogKeywordStatus.PLANNED, listed.single().status)
             assertEquals("2026-10-20", listed.single().plannedFor)
+            assertEquals("Buyers search it before choosing a tool", listed.single().fitReason)
 
             assertEquals("queued", it.blog.planKeywords("w1", PlanBlogKeywordsParams(seeds = listOf("scheduling"))).status)
             assertEquals("kw_1", it.blog.addKeyword("w1", CreateBlogKeywordParams("social media calendar", "2026-10-20")).id)
@@ -164,6 +182,55 @@ class BlogTest {
         val delete = server.takeRequest()
         assertEquals("DELETE", delete.method)
         assertEquals("/v1/blog/keywords/kw_1?workspaceId=w1", delete.path)
+    }
+
+    @Test
+    fun `seed suggestions post the workspace, seeds and prompt`() = runTest {
+        server.enqueue(json(200, """{"data":{"seeds":["social media calendar","post scheduler"]}}"""))
+        server.enqueue(
+            json(402, """{"error":"insufficient_credits","message":"balance ran out","upgrade_url":"https://fopost.com/billing"}"""),
+        )
+
+        server.client(maxRetries = 1).use { client ->
+            val suggested = client.blog.suggestSeeds(
+                "w1",
+                SuggestBlogSeedsParams(seeds = listOf("scheduling"), prompt = "Lean into small agencies"),
+            )
+            assertEquals(listOf("social media calendar", "post scheduler"), suggested.seeds)
+
+            val payment = assertThrows<PaymentRequiredException> { client.blog.suggestSeeds("w1") }
+            assertEquals("insufficient_credits", payment.code)
+        }
+
+        val suggest = server.takeRequest()
+        assertEquals("POST", suggest.method)
+        assertEquals("/v1/blog/keywords/suggest", suggest.path)
+        val body = Json.parseToJsonElement(suggest.body.readUtf8()).jsonObject
+        assertEquals("w1", body["workspaceId"]?.jsonPrimitive?.content)
+        assertEquals("scheduling", body["seeds"]?.jsonArray?.single()?.jsonPrimitive?.content)
+        assertEquals("Lean into small agencies", body["prompt"]?.jsonPrimitive?.content)
+
+        val bare = Json.parseToJsonElement(server.takeRequest().body.readUtf8()).jsonObject
+        assertEquals(setOf("workspaceId"), bare.keys)
+    }
+
+    @Test
+    fun `submitting an article moves it to review and a wrong state is a 409`() = runTest {
+        server.enqueue(json(200, """{"data":${article.replace("\"status\":\"draft\"", "\"status\":\"in_review\"")}}"""))
+        server.enqueue(json(409, """{"error":"invalid_state","message":"only a draft can be submitted"}"""))
+
+        server.client(maxRetries = 1).use { client ->
+            assertEquals(BlogArticleStatus.IN_REVIEW, client.blog.submitArticle("w1", "ar_1").status)
+
+            val conflict = assertThrows<ApiException> { client.blog.submitArticle("w1", "ar_1") }
+            assertEquals(409, conflict.status)
+            assertEquals("invalid_state", conflict.code)
+        }
+
+        val submit = server.takeRequest()
+        assertEquals("POST", submit.method)
+        assertEquals("/v1/blog/articles/ar_1/submit?workspaceId=w1", submit.path)
+        assertEquals(0L, submit.bodySize)
     }
 
     @Test

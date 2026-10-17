@@ -6,6 +6,7 @@ import com.fopost.model.BlogArticle
 import com.fopost.model.BlogArticleFull
 import com.fopost.model.BlogKeyword
 import com.fopost.model.BlogPlanQueued
+import com.fopost.model.BlogSeedSuggestions
 import com.fopost.model.BlogSettings
 import com.fopost.model.BlogSettingsUpdate
 import com.fopost.model.BlogWebsiteSecret
@@ -15,6 +16,7 @@ import com.fopost.param.BlogKeywordListParams
 import com.fopost.param.CreateBlogArticleParams
 import com.fopost.param.CreateBlogKeywordParams
 import com.fopost.param.PlanBlogKeywordsParams
+import com.fopost.param.SuggestBlogSeedsParams
 import com.fopost.param.UpdateBlogArticleParams
 import com.fopost.param.UpdateBlogKeywordParams
 import com.fopost.param.UpdateBlogSettingsParams
@@ -27,9 +29,9 @@ import okhttp3.RequestBody
 /**
  * The blog: a keyword plan, articles written from it, and where they are published.
  *
- * An article goes to a website, never to a social network. Reads, settings and keyword edits
- * need the `posts` scope; [planKeywords], [requestArticle] and [regenerateArticle] spend AI
- * credits and need `ai`; [publishArticle] needs `publish`.
+ * An article goes to a website, never to a social network. Reads, settings, keyword edits and
+ * [submitArticle] need the `posts` scope; [suggestSeeds], [planKeywords], [requestArticle]
+ * and [regenerateArticle] spend AI credits and need `ai`; [publishArticle] needs `publish`.
  *
  * Every route is scoped by `workspaceId`, which travels as a query parameter or a body field as
  * the endpoint requires.
@@ -87,8 +89,24 @@ public class BlogResource internal constructor(private val http: ApiClient) {
         http.callList("GET", "/blog/keywords", BlogKeyword.serializer(), query = workspaceQuery(workspaceId) + params.toQuery())
 
     /**
-     * Researches keywords in the background and adds the suggestions to the plan. Spends AI
-     * credits; a `402` means the balance ran out.
+     * Suggests about 10 search terms from the blog goal and topics, to edit before research.
+     * Spends AI credits; a `402` means the balance ran out.
+     */
+    public suspend fun suggestSeeds(
+        workspaceId: String,
+        params: SuggestBlogSeedsParams = SuggestBlogSeedsParams(),
+    ): BlogSeedSuggestions =
+        http.call(
+            "POST",
+            "/blog/keywords/suggest",
+            BlogSeedSuggestions.serializer(),
+            workspaceBody(workspaceId, params, SuggestBlogSeedsParams.serializer()),
+        )
+
+    /**
+     * Researches keywords in the background. Results land as `suggested` and do not fill the
+     * calendar; follow the run on [BlogSettings.planRun] and set a keyword to `planned` to pick it.
+     * Spends AI credits; a `402` means the balance ran out.
      */
     public suspend fun planKeywords(
         workspaceId: String,
@@ -109,6 +127,7 @@ public class BlogResource internal constructor(private val http: ApiClient) {
             workspaceBody(workspaceId, params, CreateBlogKeywordParams.serializer()),
         )
 
+    /** Changes a keyword. Setting its status to `planned` picks it, and it takes the next free date. */
     public suspend fun updateKeyword(
         workspaceId: String,
         keywordId: String,
@@ -149,7 +168,10 @@ public class BlogResource internal constructor(private val http: ApiClient) {
     public suspend fun getArticle(workspaceId: String, articleId: String): BlogArticleFull =
         http.call("GET", "/blog/articles/$articleId", BlogArticleFull.serializer(), query = workspaceQuery(workspaceId))
 
-    /** Edits a draft. An article that is not editable answers `409`. */
+    /**
+     * Edits a draft. An article that is not editable answers `409`. Setting `publishAt` needs the
+     * article in review (or already scheduled or failed).
+     */
     public suspend fun updateArticle(
         workspaceId: String,
         articleId: String,
@@ -167,9 +189,14 @@ public class BlogResource internal constructor(private val http: ApiClient) {
     public suspend fun regenerateArticle(workspaceId: String, articleId: String): BlogArticle =
         http.call("POST", "/blog/articles/$articleId/regenerate", BlogArticle.serializer(), query = workspaceQuery(workspaceId))
 
+    /** Moves a draft, failed or rejected article to `in_review`. Any other state answers `409`. */
+    public suspend fun submitArticle(workspaceId: String, articleId: String): BlogArticle =
+        http.call("POST", "/blog/articles/$articleId/submit", BlogArticle.serializer(), query = workspaceQuery(workspaceId))
+
     /**
-     * Publishes a draft to the configured target. Answers `409` with `no_target` when the
-     * settings name no target. Needs the `publish` scope.
+     * Publishes an article in review (or already scheduled or failed) to the configured target. A
+     * draft answers `409` until it is submitted, and `409` with `no_target` means the settings name
+     * no target. Needs the `publish` scope.
      */
     public suspend fun publishArticle(workspaceId: String, articleId: String): BlogArticle =
         http.call("POST", "/blog/articles/$articleId/publish", BlogArticle.serializer(), query = workspaceQuery(workspaceId))

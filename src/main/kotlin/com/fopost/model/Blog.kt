@@ -15,6 +15,9 @@ public object BlogArticleStatus {
     public const val QUEUED: String = "queued"
     public const val WRITING: String = "writing"
     public const val DRAFT: String = "draft"
+
+    /** Submitted for approval; publishing and scheduling are open from here. */
+    public const val IN_REVIEW: String = "in_review"
     public const val SCHEDULED: String = "scheduled"
     public const val PUBLISHING: String = "publishing"
     public const val PUBLISHED: String = "published"
@@ -22,7 +25,7 @@ public object BlogArticleStatus {
     public const val REJECTED: String = "rejected"
 
     public val ALL: List<String> =
-        listOf(QUEUED, WRITING, DRAFT, SCHEDULED, PUBLISHING, PUBLISHED, FAILED, REJECTED)
+        listOf(QUEUED, WRITING, DRAFT, IN_REVIEW, SCHEDULED, PUBLISHING, PUBLISHED, FAILED, REJECTED)
 }
 
 /** The statuses a keyword moves through. [PLANNED] and [DISMISSED] may be set by a client. */
@@ -33,6 +36,27 @@ public object BlogKeywordStatus {
     public const val DISMISSED: String = "dismissed"
 
     public val ALL: List<String> = listOf(SUGGESTED, PLANNED, WRITTEN, DISMISSED)
+}
+
+/** What the blog is for; steers suggested terms and keyword ranking. */
+public object BlogGoal {
+    public const val TRAFFIC: String = "traffic"
+    public const val LEADS: String = "leads"
+    public const val SALES: String = "sales"
+    public const val SIGNUPS: String = "signups"
+    public const val AUTHORITY: String = "authority"
+
+    public val ALL: List<String> = listOf(TRAFFIC, LEADS, SALES, SIGNUPS, AUTHORITY)
+}
+
+/** The statuses a keyword research run moves through. */
+public object BlogPlanRunStatus {
+    public const val QUEUED: String = "queued"
+    public const val RUNNING: String = "running"
+    public const val DONE: String = "done"
+    public const val FAILED: String = "failed"
+
+    public val ALL: List<String> = listOf(QUEUED, RUNNING, DONE, FAILED)
 }
 
 /** Where published articles go. */
@@ -55,13 +79,18 @@ public data class BlogSettings(
     @JsonNames("site_url") val siteUrl: String? = null,
     val topic: String? = null,
     val audience: String? = null,
+    /** One of [BlogGoal]. */
+    val goal: String? = null,
+    /** What the blog wants to write about. */
+    @JsonNames("focus_topics") val focusTopics: String? = null,
+    /** What the blog never writes about. */
+    @JsonNames("avoid_topics") val avoidTopics: String? = null,
     val language: String? = null,
     @JsonNames("location_code") val locationCode: Int? = null,
     /** Articles planned per week; 0 turns planning off. */
     @JsonNames("cadence_per_week") val cadencePerWeek: Int? = null,
-    /** Days a draft waits for review before it may auto-publish. */
+    /** Days before its planned date that a picked keyword starts being written. */
     @JsonNames("review_hold_days") val reviewHoldDays: Int? = null,
-    @JsonNames("auto_publish") val autoPublish: Boolean? = null,
     /** `draft`, `standard` or `best`. */
     @JsonNames("image_tier") val imageTier: String? = null,
     @JsonNames("in_body_images") val inBodyImages: Int? = null,
@@ -74,9 +103,21 @@ public data class BlogSettings(
     @JsonNames("target_platform") val targetPlatform: String? = null,
     @JsonNames("website_url") val websiteUrl: String? = null,
     @JsonNames("has_website_secret") val hasWebsiteSecret: Boolean? = null,
+    /** The last keyword research run; null before the first. */
+    @JsonNames("plan_run") val planRun: BlogPlanRun? = null,
     /** Whether search volume and difficulty can be fetched on this deployment. */
     @JsonNames("keyword_data_available") val keywordDataAvailable: Boolean? = null,
     @JsonNames("updated_at") val updatedAt: Instant? = null,
+)
+
+/** The last keyword research run. [status] is one of [BlogPlanRunStatus]. */
+@Serializable
+public data class BlogPlanRun(
+    val status: String? = null,
+    val error: String? = null,
+    /** New keywords the run found. */
+    val added: Int? = null,
+    @JsonNames("finished_at") val finishedAt: Instant? = null,
 )
 
 /**
@@ -106,6 +147,12 @@ public data class BlogWebsiteTest(
     val error: String? = null,
 )
 
+/** Search terms suggested from the blog goal and topics, for editing before research. */
+@Serializable
+public data class BlogSeedSuggestions(
+    val seeds: List<String> = emptyList(),
+)
+
 /** What a keyword plan request answers: the plan runs in the background. */
 @Serializable
 public data class BlogPlanQueued(
@@ -130,6 +177,8 @@ public data class BlogKeyword(
     val status: String? = null,
     /** A calendar date, `YYYY-MM-DD`. */
     @JsonNames("planned_for") val plannedFor: String? = null,
+    /** Why the keyword serves the blog goal. */
+    @JsonNames("fit_reason") val fitReason: String? = null,
     @JsonNames("created_at") val createdAt: Instant? = null,
 )
 
