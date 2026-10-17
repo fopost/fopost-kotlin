@@ -52,6 +52,11 @@ public data class AdTargeting(
     val interests: List<AdTargetingOption>? = null,
     val behaviors: List<AdTargetingOption>? = null,
     val income: List<AdTargetingOption>? = null,
+    /**
+     * Facets the network defines for itself, keyed by the targeting search type they were found
+     * with. `ads.providers()` reports which a network accepts.
+     */
+    val facets: Map<String, List<AdTargetingOption>>? = null,
 )
 
 /** Lifetime delivery numbers from the last refresh. [spendMinor] is in the ad account currency. */
@@ -180,6 +185,60 @@ public data class TargetingOption(
     val id: String? = null,
     val name: String? = null,
     val detail: String? = null,
+)
+
+/** A Business Center, or the network's equivalent grouping of ad accounts. */
+@Serializable
+public data class AdBusinessCenter(
+    val id: String? = null,
+    val name: String? = null,
+    val role: String? = null,
+)
+
+/**
+ * The account an ad runs as. Meta calls it a Page, TikTok an identity; an identity id is what
+ * every route calls a `pageId`. [type] is the network's own identity kind, e.g. `CUSTOMIZED_USER`.
+ */
+@Serializable
+public data class AdIdentity(
+    val id: String? = null,
+    val type: String? = null,
+    val name: String? = null,
+    val avatarUrl: String? = null,
+)
+
+/** A post already live on the network, offered as the source of a Spark ad. */
+@Serializable
+public data class SparkPost(
+    val id: String? = null,
+    val identityId: String? = null,
+    val caption: String? = null,
+    val thumbnailUrl: String? = null,
+    val createdAt: String? = null,
+    val views: Long? = null,
+)
+
+/** A comment on an ad, read live from the network and never stored. */
+@Serializable
+public data class AdComment(
+    val id: String? = null,
+    val adId: String? = null,
+    val text: String = "",
+    val authorName: String? = null,
+    val authorAvatarUrl: String? = null,
+    val createdAt: String? = null,
+    val likes: Long = 0,
+    val replyCount: Long = 0,
+    val hidden: Boolean = false,
+    /** The comment this one answers, when it is not on the ad itself. */
+    val parentId: String? = null,
+)
+
+/** One page of an ad's comments; pass [nextCursor] back as `after`. */
+@Serializable
+public data class AdCommentsPage(
+    val comments: List<AdComment> = emptyList(),
+    val nextCursor: String? = null,
 )
 
 /** An Instant Form on a Page. */
@@ -447,3 +506,95 @@ public data class LeadPageSubscription(
     @SerialName("page_id") @JsonNames("pageId") val pageId: String? = null,
     val backfilled: Int? = null,
 )
+
+/** A token a network expands in a link's tracking parameters at delivery time. */
+@Serializable
+public data class AdTrackingMacro(
+    val token: String? = null,
+    val description: String? = null,
+)
+
+/** An ad network from the API's registry. [configured] false cannot be connected yet. */
+@Serializable
+public data class AdProvider(
+    val id: String? = null,
+    val name: String? = null,
+    /** Logo slug. */
+    val logo: String? = null,
+    val configured: Boolean? = null,
+    @SerialName("connect_methods") @JsonNames("connectMethods") val connectMethods: List<String> = emptyList(),
+    /** What the network supports: campaigns, audiences, conversions, forecasts, and so on. */
+    val capabilities: Map<String, Boolean> = emptyMap(),
+    /** What `searchTargeting` accepts here, in picker order. */
+    @SerialName("targeting_facets") @JsonNames("targetingFacets") val targetingFacets: List<String> = emptyList(),
+    @SerialName("tracking_macros")
+    @JsonNames("trackingMacros")
+    val trackingMacros: List<AdTrackingMacro> = emptyList(),
+)
+
+/** What the auction costs, in minor units of the ad account currency. */
+@Serializable
+public data class BidPricing(
+    val currency: String? = null,
+    @SerialName("suggested_bid_minor") @JsonNames("suggestedBidMinor") val suggestedBidMinor: Long? = null,
+    @SerialName("min_bid_minor") @JsonNames("minBidMinor") val minBidMinor: Long? = null,
+    @SerialName("max_bid_minor") @JsonNames("maxBidMinor") val maxBidMinor: Long? = null,
+    @SerialName("daily_budget_floor_minor")
+    @JsonNames("dailyBudgetFloorMinor")
+    val dailyBudgetFloorMinor: Long? = null,
+)
+
+/**
+ * What an audience would deliver at a budget, over the network's own window. [ready] is false
+ * while the network has no answer for that audience.
+ */
+@Serializable
+public data class SupplyForecast(
+    val currency: String? = null,
+    val impressions: Long? = null,
+    val clicks: Long? = null,
+    @SerialName("spend_minor") @JsonNames("spendMinor") val spendMinor: Long? = null,
+    /** Days the numbers cover. */
+    @SerialName("window_days") @JsonNames("windowDays") val windowDays: Long? = null,
+    val ready: Boolean? = null,
+)
+
+/** How the network attributes a sale or a sign-up back to an ad set. */
+@Serializable
+public data class ConversionRule(
+    val id: String? = null,
+    val name: String? = null,
+    /** `purchase`, `lead`, `sign_up`, `add_to_cart`, `download`, `install`, `key_page_view` or `other`. */
+    val type: String? = null,
+    /** `last_touch` or `each_campaign`. */
+    val attribution: String? = null,
+    @SerialName("post_click_window_days")
+    @JsonNames("postClickWindowDays")
+    val postClickWindowDays: Int? = null,
+    @SerialName("view_through_window_days")
+    @JsonNames("viewThroughWindowDays")
+    val viewThroughWindowDays: Int? = null,
+    @SerialName("value_minor") @JsonNames("valueMinor") val valueMinor: Long? = null,
+    val currency: String? = null,
+    val enabled: Boolean? = null,
+    @SerialName("created_at") @JsonNames("createdAt") val createdAt: String? = null,
+    /** Ad sets this rule is attached to. */
+    @SerialName("campaign_ids") @JsonNames("campaignIds") val campaignIds: List<String> = emptyList(),
+)
+
+/** What a conversion rule recorded over a date range. */
+@Serializable
+public data class ConversionMetrics(
+    val conversions: Int? = null,
+    @SerialName("post_click_conversions")
+    @JsonNames("postClickConversions")
+    val postClickConversions: Int? = null,
+    @SerialName("view_through_conversions")
+    @JsonNames("viewThroughConversions")
+    val viewThroughConversions: Int? = null,
+    @SerialName("value_minor") @JsonNames("valueMinor") val valueMinor: Long? = null,
+    @SerialName("cost_per_conversion_minor")
+    @JsonNames("costPerConversionMinor")
+    val costPerConversionMinor: Long? = null,
+)
+

@@ -6,6 +6,7 @@ import com.fopost.model.BulkImportResult
 import com.fopost.model.BulkImportValidation
 import com.fopost.model.CancelResult
 import com.fopost.model.Delivery
+import com.fopost.model.MediaItem
 import com.fopost.model.DuplicatedPost
 import com.fopost.model.Page
 import com.fopost.model.Post
@@ -15,22 +16,28 @@ import com.fopost.model.PublishResult
 import com.fopost.model.PublishRun
 import com.fopost.model.RetryResult
 import com.fopost.param.CancelParams
+import com.fopost.param.ContentBlockInput
 import com.fopost.param.CreatePostParams
 import com.fopost.param.PostListParams
 import com.fopost.param.PublishParams
 import com.fopost.param.RetryParams
 import com.fopost.param.UpdatePostParams
+import com.fopost.param.UploadFile
 import java.io.File
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
 
 /** Create, schedule, publish, and inspect posts. */
-public class PostsResource internal constructor(private val http: ApiClient) {
+public class PostsResource internal constructor(
+    private val http: ApiClient,
+    private val media: MediaResource,
+) {
 
     /** One page of posts. The page iterates over its items directly. */
     public suspend fun list(params: PostListParams = PostListParams()): Page<Post> =
@@ -61,11 +68,47 @@ public class PostsResource internal constructor(private val http: ApiClient) {
     public suspend fun get(postId: String): Post =
         http.call("GET", "/posts/$postId", Post.serializer())
 
-    public suspend fun create(params: CreatePostParams): Post =
-        http.call("POST", "/posts", Post.serializer(), http.jsonBody(params, CreatePostParams.serializer()))
+    /**
+     * Create a post, optionally with up to five [files] attached to its first content block.
+     *
+     * Files are stored in the workspace library. Small ones travel in the same request; a file
+     * over the multipart ceiling is uploaded directly first. Either way the result is one post.
+     */
+    public suspend fun create(params: CreatePostParams, files: List<UploadFile> = emptyList()): Post {
+        if (files.isEmpty()) {
+            return http.call("POST", "/posts", Post.serializer(), http.jsonBody(params, CreatePostParams.serializer()))
+        }
+        require(params.content.isNotEmpty()) { "fopost: a post with files needs at least one content block" }
+        if (fitMultipart(files)) {
+            val body = http.json.encodeToJsonElement(CreatePostParams.serializer(), params)
+            return http.call("POST", "/posts", Post.serializer(), postWithFiles(body, files))
+        }
+        val attached = uploadAll(params.workspaceId, files)
+        val content = withMedia(params.content, attached)
+        return create(params.copy(content = content))
+    }
 
-    public suspend fun update(postId: String, params: UpdatePostParams): Post =
-        http.call("PUT", "/posts/$postId", Post.serializer(), http.jsonBody(params, UpdatePostParams.serializer()))
+    /**
+     * Update a post, optionally attaching [files] to its first content block.
+     *
+     * Routing is the same as [create]. When [params] carries no `content` and a file needs a
+     * direct upload, the post is read first and the files are appended to its first block.
+     */
+    public suspend fun update(postId: String, params: UpdatePostParams, files: List<UploadFile> = emptyList()): Post {
+        if (files.isEmpty()) {
+            return http.call("PUT", "/posts/$postId", Post.serializer(), http.jsonBody(params, UpdatePostParams.serializer()))
+        }
+        if (fitMultipart(files)) {
+            val body = http.json.encodeToJsonElement(UpdatePostParams.serializer(), params)
+            return http.call("PUT", "/posts/$postId", Post.serializer(), postWithFiles(body, files))
+        }
+        val existing = get(postId)
+        val workspaceId = requireNotNull(existing.workspaceId) { "fopost: post $postId has no workspace_id" }
+        val attached = uploadAll(workspaceId, files)
+        val content = params.content
+            ?: existing.content.map { ContentBlockInput(it.text.orEmpty(), it.media.takeIf { m -> m.isNotEmpty() }) }
+        return update(postId, params.copy(content = withMedia(content, attached)))
+    }
 
     public suspend fun delete(postId: String) {
         http.send("DELETE", "/posts/$postId")
@@ -180,6 +223,26 @@ public class PostsResource internal constructor(private val http: ApiClient) {
             unwrap = false,
         )
 
+    private suspend fun fitMultipart(files: List<UploadFile>): Boolean {
+        val ceiling = runCatching { media.limits().multipartMaxFileBytes }.getOrNull() ?: DEFAULT_MULTIPART_MAX_FILE_BYTES
+        return files.all { it.fitsMultipart(ceiling) }
+    }
+
+    private suspend fun uploadAll(workspaceId: String, files: List<UploadFile>) =
+        files.map { media.uploadDirect(workspaceId, it).toMediaItem() }
+
+    private fun withMedia(content: List<ContentBlockInput>, attached: List<MediaItem>): List<ContentBlockInput> {
+        val first = content.firstOrNull() ?: ContentBlockInput("")
+        return listOf(first.copy(media = first.media.orEmpty() + attached)) + content.drop(1)
+    }
+
+    private fun postWithFiles(post: JsonElement, files: List<UploadFile>) =
+        MultipartBody.Builder()
+            .setType(MultipartBody.FORM)
+            .addFormDataPart("post", post.toString())
+            .apply { files.forEach { addFormDataPart("files", it.filename, it.requestBody()) } }
+            .build()
+
     private fun csvUpload(filename: String, csv: ByteArray, workspaceId: String) =
         MultipartBody.Builder()
             .setType(MultipartBody.FORM)
@@ -199,6 +262,8 @@ public class PostsResource internal constructor(private val http: ApiClient) {
 
     private companion object {
         const val DEFAULT_PER_PAGE = 30
+        // What a multipart request may carry per file when the limits call cannot be reached.
+        const val DEFAULT_MULTIPART_MAX_FILE_BYTES = 100L * 1024 * 1024
         val CSV_MEDIA_TYPE = "text/csv".toMediaType()
     }
 }
