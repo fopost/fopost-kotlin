@@ -7,6 +7,7 @@ import com.fopost.resource.AccountGroupsResource
 import com.fopost.resource.AccountsResource
 import com.fopost.resource.ActivityResource
 import com.fopost.resource.AdsResource
+import com.fopost.resource.BlogsResource
 import com.fopost.resource.AnalyticsResource
 import com.fopost.resource.AutomationsResource
 import com.fopost.resource.BlogResource
@@ -146,6 +147,9 @@ public class FoPost @JvmOverloads constructor(
     public val blog: BlogResource = BlogResource(api)
     /** WhatsApp Business: templates, flows, groups, blocking and commerce. */
     public val whatsapp: WhatsappResource = WhatsappResource(api)
+
+    /** Articles and products that already live on a connected site. */
+    public val blogs: BlogsResource = BlogsResource(api)
 
     /**
      * Call an endpoint this SDK does not wrap yet, authenticated and retried like any other call.
