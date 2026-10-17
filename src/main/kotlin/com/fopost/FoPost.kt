@@ -22,6 +22,7 @@ import com.fopost.resource.MediaResource
 import com.fopost.resource.PostsResource
 import com.fopost.resource.SequencesResource
 import com.fopost.resource.ValidateResource
+import com.fopost.resource.WhatsappResource
 import com.fopost.resource.WebhooksResource
 import com.fopost.resource.WorkspacesResource
 import java.io.Closeable
@@ -143,6 +144,8 @@ public class FoPost @JvmOverloads constructor(
 
     /** The blog: keyword plan, articles and the publishing target. */
     public val blog: BlogResource = BlogResource(api)
+    /** WhatsApp Business: templates, flows, groups, blocking and commerce. */
+    public val whatsapp: WhatsappResource = WhatsappResource(api)
 
     /**
      * Call an endpoint this SDK does not wrap yet, authenticated and retried like any other call.
