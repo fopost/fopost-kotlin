@@ -45,4 +45,31 @@ public data class PresignedUpload(
     val method: String? = null,
     val headers: Map<String, String>? = null,
     @SerialName("expires_at") @JsonNames("expiresAt") val expiresAt: Instant? = null,
+    /** The largest file the account may upload, so a caller can tell why a bigger one was refused. */
+    @SerialName("max_file_bytes") @JsonNames("maxFileBytes") val maxFileBytes: Long? = null,
+)
+
+/** What the account may upload today: the per-file ceiling by any route, and the multipart ceiling. */
+@Serializable
+public data class UploadLimits(
+    /** The largest file the account may upload by any route. Grows with connected accounts. */
+    @SerialName("max_file_bytes") @JsonNames("maxFileBytes") val maxFileBytes: Long? = null,
+    /** `accounts`, `add_on`, or `bypass`: what set [maxFileBytes]. */
+    val source: String? = null,
+    @SerialName("connected_accounts") @JsonNames("connectedAccounts") val connectedAccounts: Int? = null,
+    @SerialName("large_uploads_enabled") @JsonNames("largeUploadsEnabled") val largeUploadsEnabled: Boolean? = null,
+    /** The next ceiling and the account count that unlocks it, or null at the top. */
+    @SerialName("next_tier") @JsonNames("nextTier") val nextTier: UploadLimitTier? = null,
+    /** The most a multipart request may carry per file; bigger files go through a direct upload. */
+    @SerialName("multipart_max_file_bytes") @JsonNames("multipartMaxFileBytes") val multipartMaxFileBytes: Long? = null,
+    @SerialName("max_files_per_upload") @JsonNames("maxFilesPerUpload") val maxFilesPerUpload: Int? = null,
+    @SerialName("direct_upload_available") @JsonNames("directUploadAvailable") val directUploadAvailable: Boolean? = null,
+    @SerialName("allowed_types") @JsonNames("allowedTypes") val allowedTypes: List<String>? = null,
+)
+
+/** One step of the upload-size ladder. */
+@Serializable
+public data class UploadLimitTier(
+    @SerialName("up_to_accounts") @JsonNames("upToAccounts") val upToAccounts: Int? = null,
+    @SerialName("max_file_bytes") @JsonNames("maxFileBytes") val maxFileBytes: Long? = null,
 )

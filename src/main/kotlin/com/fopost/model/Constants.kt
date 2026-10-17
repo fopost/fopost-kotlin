@@ -18,6 +18,7 @@ public object Platforms {
     public const val SLACK: String = "slack"
     public const val REDDIT: String = "reddit"
     public const val PINTEREST: String = "pinterest"
+    public const val SNAPCHAT: String = "snapchat"
     public const val TUMBLR: String = "tumblr"
     public const val DRIBBBLE: String = "dribbble"
     public const val MEWE: String = "mewe"
@@ -39,11 +40,13 @@ public object Platforms {
     public const val WHOP: String = "whop"
     public const val SKOOL: String = "skool"
 
+    public const val WHATSAPP: String = "whatsapp"
+
     public val ALL: List<String> = listOf(
         TWITTER, LINKEDIN, FACEBOOK, INSTAGRAM, INSTAGRAM_BUSINESS, TELEGRAM, TWITCH, DISCORD,
-        SLACK, REDDIT, PINTEREST, TUMBLR, DRIBBBLE, MEWE, TIKTOK, YOUTUBE, BLUESKY, THREADS,
+        SLACK, REDDIT, PINTEREST, SNAPCHAT, TUMBLR, DRIBBBLE, MEWE, TIKTOK, YOUTUBE, BLUESKY, THREADS,
         MASTODON, LEMMY, DEVTO, HASHNODE, MEDIUM, SUBSTACK, GOOGLE_BUSINESS, KICK, LISTMONK,
-        WORDPRESS, NOSTR, WHOP, SKOOL,
+        WORDPRESS, NOSTR, WHOP, SKOOL, WHATSAPP,
     )
 }
 
@@ -75,9 +78,10 @@ public object WebhookEvents {
     public const val DELIVERY_FAILED: String = "delivery.failed"
     public const val DELIVERY_DELAYED: String = "delivery.delayed"
     public const val ACCOUNT_HEALTH_CHANGED: String = "account.health_changed"
+    public const val ARTICLE_PUBLISHED: String = "article.published"
 
     public val ALL: List<String> = listOf(
         POST_PUBLISHED, POST_FAILED, POST_PARTIALLY_FAILED, DELIVERY_PUBLISHED,
-        DELIVERY_FAILED, DELIVERY_DELAYED, ACCOUNT_HEALTH_CHANGED,
+        DELIVERY_FAILED, DELIVERY_DELAYED, ACCOUNT_HEALTH_CHANGED, ARTICLE_PUBLISHED,
     )
 }

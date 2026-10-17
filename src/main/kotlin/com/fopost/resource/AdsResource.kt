@@ -3,19 +3,38 @@ package com.fopost.resource
 import com.fopost.internal.ApiClient
 import com.fopost.model.Ad
 import com.fopost.model.AdAccountTree
+import com.fopost.model.AdActivity
+import com.fopost.model.AdActivityResult
+import com.fopost.model.AdBusinessCenter
 import com.fopost.model.AdCampaign
+import com.fopost.model.AdComment
+import com.fopost.model.AdCommentsPage
 import com.fopost.model.AdConnection
 import com.fopost.model.AdCreative
 import com.fopost.model.AdCreativesResult
+import com.fopost.model.AdIdentity
 import com.fopost.model.AdInsightsReport
+import com.fopost.model.AdLibraryPage
+import com.fopost.model.AdProvider
+
+import com.fopost.model.AdLabel
 import com.fopost.model.AdSet
 import com.fopost.model.AdSource
+import com.fopost.model.AdStudy
 import com.fopost.model.Audience
 import com.fopost.model.AudiencesResult
 import com.fopost.model.BoostablePost
+import com.fopost.model.BidPricing
 import com.fopost.model.BulkAdStatusResult
+import com.fopost.model.ConversionMetrics
+import com.fopost.model.ConversionRule
+
+import com.fopost.model.CatalogBatchResult
+import com.fopost.model.CatalogProductsPage
 import com.fopost.model.CreatedAudience
 import com.fopost.model.ExternalAd
+import com.fopost.model.HighDemandPeriod
+import com.fopost.model.IosCampaignLimits
 import com.fopost.model.LeadFormDetail
 import com.fopost.model.LeadFormSource
 import com.fopost.model.LeadPage
@@ -23,34 +42,76 @@ import com.fopost.model.LeadPageSubscription
 import com.fopost.model.LeadsFeed
 import com.fopost.model.LeadsPage
 import com.fopost.model.NetworkAd
+import com.fopost.model.PartnershipCreator
+import com.fopost.model.ProductCatalog
+import com.fopost.model.ProductCatalogsResult
+import com.fopost.model.ProductFeed
+import com.fopost.model.ProductFeedUpload
+import com.fopost.model.ProductSet
 import com.fopost.model.ReachEstimate
+import com.fopost.model.SupplyForecast
 import com.fopost.model.TargetingOption
+import com.fopost.param.AdCompany
+import com.fopost.param.AdForecastParams
+import com.fopost.param.AdLibraryParams
+import com.fopost.param.AddAudienceCompaniesBody
+
+import com.fopost.model.ReachFrequencyPrediction
+import com.fopost.model.ReachFrequencyResult
+import com.fopost.model.SparkPost
+import com.fopost.model.ValueRuleSet
+import com.fopost.param.AdCommentParams
+import com.fopost.param.AdLabelParams
 import com.fopost.param.AddAudienceUsersBody
+import com.fopost.param.ApplyAdLabelParams
 import com.fopost.param.BoostPostParams
 import com.fopost.param.BulkAdStatusParams
+import com.fopost.param.CatalogProductBatchParams
 import com.fopost.param.CreateAdCampaignParams
 import com.fopost.param.CreateAdCreativeParams
 import com.fopost.param.CreateAdParams
 import com.fopost.param.CreateAdSetParams
+import com.fopost.param.ConversionAssociationBody
+import com.fopost.param.ConversionApiEvent
+import com.fopost.param.ConversionEventsBody
 import com.fopost.param.CreateAudienceParams
+import com.fopost.param.CreateConversionRuleParams
+
+import com.fopost.param.CreateAdStudyParams
+import com.fopost.param.CreateCatalogParams
+import com.fopost.param.CreateHighDemandPeriodParams
 import com.fopost.param.CreateLeadFormParams
 import com.fopost.param.CreateNetworkAdParams
+import com.fopost.param.CreateProductFeedParams
+import com.fopost.param.CreateReachFrequencyParams
+import com.fopost.param.CreateValueRuleSetParams
 import com.fopost.param.DuplicateAdObjectBody
+import com.fopost.param.GoogleAuthorizeParams
 import com.fopost.param.LeadPageBody
 import com.fopost.param.MetaAuthorizeParams
+import com.fopost.param.UpdateConversionRuleParams
+
+import com.fopost.param.PartnershipParams
+import com.fopost.param.ProductSetParams
 import com.fopost.param.ReachEstimateParams
+import com.fopost.param.ReachFrequencyActionParams
 import com.fopost.param.SetAdStatusBody
+import com.fopost.param.StartFeedUploadParams
 import com.fopost.param.UpdateAdCampaignParams
 import com.fopost.param.UpdateAdSetParams
 import com.fopost.param.UpdateAudienceParams
+import com.fopost.param.UpdateCatalogParams
 import com.fopost.param.UpdateNetworkAdParams
+import com.fopost.param.UploadConversionsParams
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.longOrNull
 
 /**
- * Meta ads, campaigns, creatives, audiences, insights and lead forms.
+ * Ads, campaigns, creatives, audiences, insights and lead forms across the ad networks.
  *
  * Every method needs the `ads` scope. [boost], [create], [setStatus] and [delete] spend money and
  * also need `publish`, as do creating, updating, deleting and duplicating campaigns, ad sets and
@@ -82,13 +143,32 @@ public class AdsResource internal constructor(private val http: ApiClient) {
     public suspend fun sources(workspaceId: String? = null): List<AdSource> =
         http.callList("GET", "/ads/sources", AdSource.serializer(), query = mapOf("workspace_id" to workspaceId))
 
-    /** The Meta login URL. The caller finishes the login in a browser. */
-    public suspend fun authorizeMeta(params: MetaAuthorizeParams): String {
+    /** The ad networks this deployment knows, with what each one supports. */
+    public suspend fun providers(): List<AdProvider> =
+        http.callList("GET", "/ads/providers", AdProvider.serializer())
+
+    /** The network's login URL. The caller finishes the login in a browser. */
+    public suspend fun authorize(provider: String, params: MetaAuthorizeParams): String {
         val data = http.call(
             "POST",
-            "/ads/connections/meta/authorize",
+            "/ads/connections/$provider/authorize",
             JsonObject.serializer(),
             http.jsonBody(params, MetaAuthorizeParams.serializer()),
+        )
+        return data["url"]?.jsonPrimitive?.contentOrNull.orEmpty()
+    }
+
+    /** The Meta login URL. */
+    @Deprecated("Use authorize(\"meta\", params).", ReplaceWith("authorize(\"meta\", params)"))
+    public suspend fun authorizeMeta(params: MetaAuthorizeParams): String = authorize("meta", params)
+
+    /** The Google login URL. The caller finishes the login in a browser. */
+    public suspend fun authorizeGoogle(params: GoogleAuthorizeParams): String {
+        val data = http.call(
+            "POST",
+            "/ads/connections/google/authorize",
+            JsonObject.serializer(),
+            http.jsonBody(params, GoogleAuthorizeParams.serializer()),
         )
         return data["url"]?.jsonPrimitive?.contentOrNull.orEmpty()
     }
@@ -453,6 +533,113 @@ public class AdsResource internal constructor(private val http: ApiClient) {
             ),
         )
 
+    /**
+     * TikTok's Business Centers. The one network-named read on this resource, because no other
+     * network groups ad accounts this way.
+     */
+    public suspend fun tiktokBusinessCenters(
+        connectionId: String,
+        workspaceId: String? = null,
+    ): List<AdBusinessCenter> =
+        http.callList(
+            "GET",
+            "/ads/tiktok/business-centers",
+            AdBusinessCenter.serializer(),
+            query = connection(workspaceId, connectionId),
+        )
+
+    /** The accounts an ad can run as; an identity id is a `pageId`. */
+    public suspend fun tiktokIdentities(
+        connectionId: String,
+        adAccountId: String,
+        workspaceId: String? = null,
+    ): List<AdIdentity> =
+        http.callList(
+            "GET",
+            "/ads/tiktok/identities",
+            AdIdentity.serializer(),
+            query = connection(workspaceId, connectionId) + ("ad_account_id" to adAccountId),
+        )
+
+    /** Posts already live under an identity, each a candidate Spark ad. */
+    public suspend fun sparkPosts(
+        connectionId: String,
+        adAccountId: String,
+        identityId: String,
+        workspaceId: String? = null,
+    ): List<SparkPost> =
+        http.callList(
+            "GET",
+            "/ads/spark-posts",
+            SparkPost.serializer(),
+            query = connection(workspaceId, connectionId) +
+                mapOf("ad_account_id" to adAccountId, "identity_id" to identityId),
+        )
+
+    /**
+     * Offline conversions against a pixel the ad account owns. Identifiers are hashed before
+     * anything leaves FoPost; returns how many the network accepted.
+     */
+    public suspend fun uploadConversions(params: UploadConversionsParams): Long {
+        val data = http.call(
+            "POST",
+            "/ads/conversions",
+            JsonObject.serializer(),
+            http.jsonBody(params, UploadConversionsParams.serializer()),
+        )
+        return data["accepted"]?.jsonPrimitive?.longOrNull ?: 0
+    }
+
+    /** One page of an ad's comments; pass `nextCursor` back as [after]. */
+    public suspend fun comments(
+        connectionId: String,
+        adId: String,
+        after: String? = null,
+        workspaceId: String? = null,
+    ): AdCommentsPage =
+        http.call(
+            "GET",
+            "/ads/comments",
+            AdCommentsPage.serializer(),
+            query = connection(workspaceId, connectionId) +
+                mapOf("ad_id" to adId, "after" to after),
+        )
+
+    /**
+     * Answer a comment on an ad; returns the reply's id on the network. Needs the `publish` scope
+     * as well as `ads`.
+     */
+    public suspend fun replyToComment(commentId: String, params: AdCommentParams): String {
+        val data = http.call(
+            "POST",
+            "/ads/comments/$commentId/reply",
+            JsonObject.serializer(),
+            http.jsonBody(params, AdCommentParams.serializer()),
+        )
+        return data["replyId"]?.jsonPrimitive?.contentOrNull.orEmpty()
+    }
+
+    /** Hide or show a comment on an ad. Needs the `publish` scope as well as `ads`. */
+    public suspend fun setCommentHidden(commentId: String, params: AdCommentParams) {
+        http.send(
+            "POST",
+            "/ads/comments/$commentId/hide",
+            http.jsonBody(params, AdCommentParams.serializer()),
+        )
+    }
+
+    /**
+     * Remove a comment from the ad on the network. One already gone succeeds. Needs the `publish`
+     * scope as well as `ads`.
+     */
+    public suspend fun deleteComment(commentId: String, params: AdCommentParams) {
+        http.send(
+            "DELETE",
+            "/ads/comments/$commentId",
+            http.jsonBody(params, AdCommentParams.serializer()),
+        )
+    }
+
     /** Every connection and Page with the Instant Forms on it. */
     public suspend fun leadForms(workspaceId: String? = null): List<LeadFormSource> =
         http.callList(
@@ -571,6 +758,699 @@ public class AdsResource internal constructor(private val http: ApiClient) {
         )
         return data["id"]?.jsonPrimitive?.contentOrNull.orEmpty()
     }
+
+    /**
+     * Add companies to a company-list audience. Answers the count the network took. The rows
+     * travel with the request and are never stored.
+     */
+    public suspend fun addAudienceCompanies(
+        audienceId: String,
+        workspaceId: String,
+        connectionId: String,
+        companies: List<AdCompany>,
+    ): Int {
+        val data = http.call(
+            "POST",
+            "/ads/audiences/$audienceId/companies",
+            JsonObject.serializer(),
+            http.jsonBody(AddAudienceCompaniesBody(companies), AddAudienceCompaniesBody.serializer()),
+            query = connection(workspaceId, connectionId),
+        )
+        return data["added"]?.jsonPrimitive?.intOrNull ?: 0
+    }
+
+    /** What the auction currently costs for that audience. */
+    public suspend fun bidPricing(params: AdForecastParams): BidPricing = http.call(
+        "POST",
+        "/ads/linkedin/bid-pricing",
+        BidPricing.serializer(),
+        http.jsonBody(params, AdForecastParams.serializer()),
+    )
+
+    /** What that audience would deliver at that budget. */
+    public suspend fun supplyForecast(params: AdForecastParams): SupplyForecast = http.call(
+        "POST",
+        "/ads/linkedin/supply-forecast",
+        SupplyForecast.serializer(),
+        http.jsonBody(params, AdForecastParams.serializer()),
+    )
+
+    /** The conversion rules on one ad account. */
+    public suspend fun conversionRules(
+        workspaceId: String?,
+        connectionId: String,
+        adAccountId: String,
+    ): List<ConversionRule> = http.callList(
+        "GET",
+        "/ads/linkedin/conversion-rules",
+        ConversionRule.serializer(),
+        query = connection(workspaceId, connectionId) + mapOf("ad_account_id" to adAccountId),
+    )
+
+    /** Creates a conversion rule. Answers its id. */
+    public suspend fun createConversionRule(params: CreateConversionRuleParams): String {
+        val data = http.call(
+            "POST",
+            "/ads/linkedin/conversion-rules",
+            JsonObject.serializer(),
+            http.jsonBody(params, CreateConversionRuleParams.serializer()),
+        )
+        return data["id"]?.jsonPrimitive?.contentOrNull.orEmpty()
+    }
+
+    // ─── Goals ──────────────────────────────────────────────────────
+
+    /**
+     * The goals this connection's ad platform can run right now. Ask rather than assume: a goal
+     * the deployment is not set up for is absent here and is refused if you send it anyway.
+     */
+    public suspend fun goals(connectionId: String, workspaceId: String? = null): List<String> =
+        http.callList("GET", "/ads/goals", String.serializer(), query = connection(workspaceId, connectionId))
+
+    // ─── Product catalogs ───────────────────────────────────────────
+
+    /** Catalogs the connection's business portfolios reach. Read live, never stored. */
+    public suspend fun catalogs(connectionId: String, workspaceId: String? = null): List<ProductCatalog> =
+        http.call(
+            "GET",
+            "/ads/catalogs",
+            ProductCatalogsResult.serializer(),
+            query = connection(workspaceId, connectionId),
+        ).catalogs
+
+    /** Created on the connection's business portfolio. Also needs `publish`. */
+    public suspend fun createCatalog(params: CreateCatalogParams): ProductCatalog =
+        http.call(
+            "POST",
+            "/ads/catalogs",
+            ProductCatalog.serializer(),
+            http.jsonBody(params, CreateCatalogParams.serializer()),
+        )
+
+    public suspend fun catalog(catalogId: String, connectionId: String, workspaceId: String? = null): ProductCatalog =
+        http.call(
+            "GET",
+            "/ads/catalogs/$catalogId",
+            ProductCatalog.serializer(),
+            query = connection(workspaceId, connectionId),
+        )
+
+    /** Also needs `publish`. */
+    public suspend fun updateCatalog(
+        catalogId: String,
+        workspaceId: String,
+        connectionId: String,
+        params: UpdateCatalogParams,
+    ): ProductCatalog =
+        http.call(
+            "PATCH",
+            "/ads/catalogs/$catalogId",
+            ProductCatalog.serializer(),
+            http.jsonBody(params, UpdateCatalogParams.serializer()),
+            query = connection(workspaceId, connectionId),
+        )
+
+    /** Deletes every product, feed and set in it. Also needs `publish`. */
+    public suspend fun deleteCatalog(catalogId: String, workspaceId: String, connectionId: String) {
+        http.send("DELETE", "/ads/catalogs/$catalogId", query = connection(workspaceId, connectionId))
+    }
+
+    /** One page of products; pass `nextCursor` back as [after]. */
+    public suspend fun catalogProducts(
+        catalogId: String,
+        connectionId: String,
+        workspaceId: String? = null,
+        after: String? = null,
+    ): CatalogProductsPage =
+        http.call(
+            "GET",
+            "/ads/catalogs/$catalogId/products",
+            CatalogProductsPage.serializer(),
+            query = connection(workspaceId, connectionId) + ("after" to after),
+        )
+
+    /**
+     * Up to 500 upserts and deletes in one batch, keyed by your own retailer id. Also needs
+     * `publish`.
+     */
+    public suspend fun writeCatalogProducts(
+        catalogId: String,
+        params: CatalogProductBatchParams,
+    ): CatalogBatchResult =
+        http.call(
+            "POST",
+            "/ads/catalogs/$catalogId/products",
+            CatalogBatchResult.serializer(),
+            http.jsonBody(params, CatalogProductBatchParams.serializer()),
+        )
+
+    public suspend fun productFeeds(
+        catalogId: String,
+        connectionId: String,
+        workspaceId: String? = null,
+    ): List<ProductFeed> =
+        http.callList(
+            "GET",
+            "/ads/catalogs/$catalogId/feeds",
+            ProductFeed.serializer(),
+            query = connection(workspaceId, connectionId),
+        )
+
+    /** Also needs `publish`. */
+    public suspend fun createProductFeed(catalogId: String, params: CreateProductFeedParams): ProductFeed =
+        http.call(
+            "POST",
+            "/ads/catalogs/$catalogId/feeds",
+            ProductFeed.serializer(),
+            http.jsonBody(params, CreateProductFeedParams.serializer()),
+        )
+
+    /** Also needs `publish`. */
+    public suspend fun deleteProductFeed(
+        catalogId: String,
+        feedId: String,
+        workspaceId: String,
+        connectionId: String,
+    ) {
+        http.send(
+            "DELETE",
+            "/ads/catalogs/$catalogId/feeds/$feedId",
+            query = connection(workspaceId, connectionId),
+        )
+    }
+
+    /** Each run the ad platform made of the feed. */
+    public suspend fun feedUploads(
+        catalogId: String,
+        feedId: String,
+        connectionId: String,
+        workspaceId: String? = null,
+    ): List<ProductFeedUpload> =
+        http.callList(
+            "GET",
+            "/ads/catalogs/$catalogId/feeds/$feedId/uploads",
+            ProductFeedUpload.serializer(),
+            query = connection(workspaceId, connectionId),
+        )
+
+    /** Fetches the feed now; the id of the run. Also needs `publish`. */
+    public suspend fun startFeedUpload(
+        catalogId: String,
+        feedId: String,
+        params: StartFeedUploadParams,
+    ): String {
+        val data = http.call(
+            "POST",
+            "/ads/catalogs/$catalogId/feeds/$feedId/uploads",
+            JsonObject.serializer(),
+            http.jsonBody(params, StartFeedUploadParams.serializer()),
+        )
+        return data["id"]?.jsonPrimitive?.contentOrNull.orEmpty()
+    }
+
+    /** One rule, with the ad sets it is attached to. */
+    public suspend fun conversionRule(
+        ruleId: String,
+        workspaceId: String?,
+        connectionId: String,
+    ): ConversionRule = http.call(
+        "GET",
+        conversionRulePath(ruleId),
+        ConversionRule.serializer(),
+        query = connection(workspaceId, connectionId),
+    )
+
+    /** Changes a rule. */
+    public suspend fun updateConversionRule(
+        ruleId: String,
+        workspaceId: String,
+        connectionId: String,
+        params: UpdateConversionRuleParams,
+    ): ConversionRule = http.call(
+        "PATCH",
+        conversionRulePath(ruleId),
+        ConversionRule.serializer(),
+        http.jsonBody(params, UpdateConversionRuleParams.serializer()),
+        query = connection(workspaceId, connectionId),
+    )
+
+    /** Turns a rule off. The network keeps the history. */
+    public suspend fun deleteConversionRule(ruleId: String, workspaceId: String, connectionId: String) {
+        http.send("DELETE", conversionRulePath(ruleId), query = connection(workspaceId, connectionId))
+    }
+
+    /** Attaches a rule to an ad set on the same connection. */
+    public suspend fun attachConversionRule(
+        ruleId: String,
+        workspaceId: String,
+        connectionId: String,
+        campaignId: String,
+    ): ConversionRule = association("POST", ruleId, workspaceId, connectionId, campaignId)
+
+    /** Detaches a rule from an ad set. */
+    public suspend fun detachConversionRule(
+        ruleId: String,
+        workspaceId: String,
+        connectionId: String,
+        campaignId: String,
+    ): ConversionRule = association("DELETE", ruleId, workspaceId, connectionId, campaignId)
+
+    /** What a rule recorded between two `YYYY-MM-DD` days, inclusive. */
+    public suspend fun conversionMetrics(
+        ruleId: String,
+        workspaceId: String?,
+        connectionId: String,
+        since: String,
+        until: String,
+    ): ConversionMetrics = http.call(
+        "GET",
+        conversionRulePath(ruleId, "/metrics"),
+        ConversionMetrics.serializer(),
+        query = connection(workspaceId, connectionId) + mapOf("since" to since, "until" to until),
+    )
+
+    /**
+     * Sends conversions back to the network. Answers how many it took. Each event needs an email
+     * or a click id; the address is hashed inside the API and nothing about an event is stored.
+     */
+    public suspend fun sendConversionEvents(
+        ruleId: String,
+        workspaceId: String,
+        connectionId: String,
+        events: List<ConversionApiEvent>,
+    ): Int {
+        val data = http.call(
+            "POST",
+            conversionRulePath(ruleId, "/events"),
+            JsonObject.serializer(),
+            http.jsonBody(ConversionEventsBody(events), ConversionEventsBody.serializer()),
+            query = connection(workspaceId, connectionId),
+        )
+        return data["accepted"]?.jsonPrimitive?.intOrNull ?: 0
+    }
+
+
+    private suspend fun association(
+        method: String,
+        ruleId: String,
+        workspaceId: String,
+        connectionId: String,
+        campaignId: String,
+    ): ConversionRule = http.call(
+        method,
+        conversionRulePath(ruleId, "/associations"),
+        ConversionRule.serializer(),
+        http.jsonBody(ConversionAssociationBody(campaignId), ConversionAssociationBody.serializer()),
+        query = connection(workspaceId, connectionId),
+    )
+
+    private fun conversionRulePath(ruleId: String, suffix: String = ""): String =
+        "/ads/linkedin/conversion-rules/$ruleId$suffix"
+
+    /** A catalog ad runs from a product set, not the whole catalog. */
+    public suspend fun productSets(
+        catalogId: String,
+        connectionId: String,
+        workspaceId: String? = null,
+    ): List<ProductSet> =
+        http.callList(
+            "GET",
+            "/ads/catalogs/$catalogId/product-sets",
+            ProductSet.serializer(),
+            query = connection(workspaceId, connectionId),
+        )
+
+    /** Also needs `publish`. */
+    public suspend fun createProductSet(catalogId: String, params: ProductSetParams): ProductSet =
+        http.call(
+            "POST",
+            "/ads/catalogs/$catalogId/product-sets",
+            ProductSet.serializer(),
+            http.jsonBody(params, ProductSetParams.serializer()),
+        )
+
+    /** Also needs `publish`. */
+    public suspend fun updateProductSet(
+        catalogId: String,
+        setId: String,
+        workspaceId: String,
+        connectionId: String,
+        params: ProductSetParams,
+    ): ProductSet =
+        http.call(
+            "PATCH",
+            "/ads/catalogs/$catalogId/product-sets/$setId",
+            ProductSet.serializer(),
+            http.jsonBody(params, ProductSetParams.serializer()),
+            query = connection(workspaceId, connectionId),
+        )
+
+    /** Also needs `publish`. */
+    public suspend fun deleteProductSet(
+        catalogId: String,
+        setId: String,
+        workspaceId: String,
+        connectionId: String,
+    ) {
+        http.send(
+            "DELETE",
+            "/ads/catalogs/$catalogId/product-sets/$setId",
+            query = connection(workspaceId, connectionId),
+        )
+    }
+
+    // ─── Reach and frequency ────────────────────────────────────────
+
+    public suspend fun reachFrequency(
+        connectionId: String,
+        adAccountId: String,
+        workspaceId: String? = null,
+    ): List<ReachFrequencyPrediction> =
+        http.call(
+            "GET",
+            "/ads/reach-frequency",
+            ReachFrequencyResult.serializer(),
+            query = account(workspaceId, connectionId, adAccountId),
+        ).predictions
+
+    /** Prices a flight. Nothing is bought until you reserve it. */
+    public suspend fun createReachFrequency(params: CreateReachFrequencyParams): ReachFrequencyPrediction =
+        http.call(
+            "POST",
+            "/ads/reach-frequency",
+            ReachFrequencyPrediction.serializer(),
+            http.jsonBody(params, CreateReachFrequencyParams.serializer()),
+        )
+
+    public suspend fun reachFrequencyPrediction(
+        predictionId: String,
+        connectionId: String,
+        adAccountId: String,
+        workspaceId: String? = null,
+    ): ReachFrequencyPrediction =
+        http.call(
+            "GET",
+            "/ads/reach-frequency/$predictionId",
+            ReachFrequencyPrediction.serializer(),
+            query = account(workspaceId, connectionId, adAccountId),
+        )
+
+    /** Holds the inventory the prediction priced. Also needs `publish`. */
+    public suspend fun reserveReachFrequency(
+        predictionId: String,
+        params: ReachFrequencyActionParams,
+    ): ReachFrequencyPrediction = reachFrequencyAction(predictionId, "reserve", params)
+
+    /** Also needs `publish`. */
+    public suspend fun cancelReachFrequency(
+        predictionId: String,
+        params: ReachFrequencyActionParams,
+    ): ReachFrequencyPrediction = reachFrequencyAction(predictionId, "cancel", params)
+
+    // ─── Ad Library ─────────────────────────────────────────────────
+
+    /**
+     * The public ad archive: ads anyone is running, by keyword or by Page. Read live on every call
+     * and stored nowhere, so an ad that stops running is simply absent from the next search.
+     * [countries] are two-letter codes the ad reached.
+     */
+    public suspend fun library(
+        connectionId: String,
+        countries: List<String>,
+        q: String? = null,
+        pageIds: List<String>? = null,
+        activeStatus: String? = null,
+        limit: Int? = null,
+        after: String? = null,
+        workspaceId: String? = null,
+    ): AdLibraryPage =
+        http.call(
+            "GET",
+            "/ads/library",
+            AdLibraryPage.serializer(),
+            query = connection(workspaceId, connectionId) + mapOf(
+                "countries" to countries.joinToString(","),
+                "q" to q,
+                "page_ids" to pageIds?.joinToString(","),
+                "active_status" to activeStatus,
+                "limit" to limit,
+                "after" to after,
+            ),
+        )
+
+    // ─── Partnership ads ────────────────────────────────────────────
+
+    /** Creators who allowlisted this Page to run partnership ads on their posts. */
+    public suspend fun partnershipCreators(
+        connectionId: String,
+        pageId: String,
+        workspaceId: String? = null,
+    ): List<PartnershipCreator> =
+        http.callList(
+            "GET",
+            "/ads/partnership/creators",
+            PartnershipCreator.serializer(),
+            query = connection(workspaceId, connectionId) + ("page_id" to pageId),
+        )
+
+    /** Asks a creator for permission; the list as it now stands. */
+    public suspend fun requestPartnership(params: PartnershipParams): List<PartnershipCreator> =
+        http.callList(
+            "POST",
+            "/ads/partnership/creators",
+            PartnershipCreator.serializer(),
+            http.jsonBody(params, PartnershipParams.serializer()),
+        )
+
+    public suspend fun revokePartnership(
+        creatorId: String,
+        workspaceId: String,
+        connectionId: String,
+        pageId: String,
+    ) {
+        http.send(
+            "DELETE",
+            "/ads/partnership/creators/$creatorId",
+            query = connection(workspaceId, connectionId) + ("page_id" to pageId),
+        )
+    }
+
+    // ─── Ad account settings ────────────────────────────────────────
+
+    /** Who changed what on the ad account, and when. Dates are `YYYY-MM-DD`. */
+    public suspend fun accountActivity(
+        connectionId: String,
+        adAccountId: String,
+        since: String? = null,
+        until: String? = null,
+        workspaceId: String? = null,
+    ): List<AdActivity> =
+        http.call(
+            "GET",
+            "/ads/account/activity",
+            AdActivityResult.serializer(),
+            query = account(workspaceId, connectionId, adAccountId) +
+                mapOf("since" to since, "until" to until),
+        ).activity
+
+    public suspend fun labels(
+        connectionId: String,
+        adAccountId: String,
+        workspaceId: String? = null,
+    ): List<AdLabel> =
+        http.callList(
+            "GET",
+            "/ads/account/labels",
+            AdLabel.serializer(),
+            query = account(workspaceId, connectionId, adAccountId),
+        )
+
+    public suspend fun createLabel(params: AdLabelParams): AdLabel =
+        http.call(
+            "POST",
+            "/ads/account/labels",
+            AdLabel.serializer(),
+            http.jsonBody(params, AdLabelParams.serializer()),
+        )
+
+    public suspend fun updateLabel(
+        labelId: String,
+        workspaceId: String,
+        connectionId: String,
+        params: AdLabelParams,
+    ): AdLabel =
+        http.call(
+            "PATCH",
+            "/ads/account/labels/$labelId",
+            AdLabel.serializer(),
+            http.jsonBody(params, AdLabelParams.serializer()),
+            query = connection(workspaceId, connectionId),
+        )
+
+    public suspend fun deleteLabel(
+        labelId: String,
+        workspaceId: String,
+        connectionId: String,
+        adAccountId: String,
+    ) {
+        http.send(
+            "DELETE",
+            "/ads/account/labels/$labelId",
+            query = account(workspaceId, connectionId, adAccountId),
+        )
+    }
+
+    /** Keeps whatever labels the object already carries. */
+    public suspend fun applyLabel(labelId: String, params: ApplyAdLabelParams) {
+        http.send(
+            "POST",
+            "/ads/account/labels/$labelId/apply",
+            http.jsonBody(params, ApplyAdLabelParams.serializer()),
+        )
+    }
+
+    public suspend fun studies(
+        connectionId: String,
+        adAccountId: String,
+        workspaceId: String? = null,
+    ): List<AdStudy> =
+        http.callList(
+            "GET",
+            "/ads/account/studies",
+            AdStudy.serializer(),
+            query = account(workspaceId, connectionId, adAccountId),
+        )
+
+    /** Splits traffic evenly across the cells for the length of the flight. */
+    public suspend fun createStudy(params: CreateAdStudyParams): AdStudy =
+        http.call(
+            "POST",
+            "/ads/account/studies",
+            AdStudy.serializer(),
+            http.jsonBody(params, CreateAdStudyParams.serializer()),
+        )
+
+    public suspend fun study(
+        studyId: String,
+        connectionId: String,
+        adAccountId: String,
+        workspaceId: String? = null,
+    ): AdStudy =
+        http.call(
+            "GET",
+            "/ads/account/studies/$studyId",
+            AdStudy.serializer(),
+            query = account(workspaceId, connectionId, adAccountId),
+        )
+
+    public suspend fun deleteStudy(
+        studyId: String,
+        workspaceId: String,
+        connectionId: String,
+        adAccountId: String,
+    ) {
+        http.send(
+            "DELETE",
+            "/ads/account/studies/$studyId",
+            query = account(workspaceId, connectionId, adAccountId),
+        )
+    }
+
+    /** How many iOS 14 campaigns the account may run at once, per app. */
+    public suspend fun iosCampaignLimits(
+        connectionId: String,
+        adAccountId: String,
+        workspaceId: String? = null,
+    ): List<IosCampaignLimits> =
+        http.callList(
+            "GET",
+            "/ads/account/ios-limits",
+            IosCampaignLimits.serializer(),
+            query = account(workspaceId, connectionId, adAccountId),
+        )
+
+    public suspend fun highDemandPeriods(
+        connectionId: String,
+        adAccountId: String,
+        workspaceId: String? = null,
+    ): List<HighDemandPeriod> =
+        http.callList(
+            "GET",
+            "/ads/account/high-demand-periods",
+            HighDemandPeriod.serializer(),
+            query = account(workspaceId, connectionId, adAccountId),
+        )
+
+    /** Tells the ad platform to expect heavier spend over a window, so pacing allows for it. */
+    public suspend fun createHighDemandPeriod(params: CreateHighDemandPeriodParams): HighDemandPeriod =
+        http.call(
+            "POST",
+            "/ads/account/high-demand-periods",
+            HighDemandPeriod.serializer(),
+            http.jsonBody(params, CreateHighDemandPeriodParams.serializer()),
+        )
+
+    public suspend fun deleteHighDemandPeriod(
+        periodId: String,
+        workspaceId: String,
+        connectionId: String,
+        adAccountId: String,
+    ) {
+        http.send(
+            "DELETE",
+            "/ads/account/high-demand-periods/$periodId",
+            query = account(workspaceId, connectionId, adAccountId),
+        )
+    }
+
+    public suspend fun valueRuleSets(
+        connectionId: String,
+        adAccountId: String,
+        workspaceId: String? = null,
+    ): List<ValueRuleSet> =
+        http.callList(
+            "GET",
+            "/ads/account/value-rule-sets",
+            ValueRuleSet.serializer(),
+            query = account(workspaceId, connectionId, adAccountId),
+        )
+
+    /** Weights conversions so some audiences count for more than others. */
+    public suspend fun createValueRuleSet(params: CreateValueRuleSetParams): ValueRuleSet =
+        http.call(
+            "POST",
+            "/ads/account/value-rule-sets",
+            ValueRuleSet.serializer(),
+            http.jsonBody(params, CreateValueRuleSetParams.serializer()),
+        )
+
+    public suspend fun deleteValueRuleSet(
+        ruleSetId: String,
+        workspaceId: String,
+        connectionId: String,
+        adAccountId: String,
+    ) {
+        http.send(
+            "DELETE",
+            "/ads/account/value-rule-sets/$ruleSetId",
+            query = account(workspaceId, connectionId, adAccountId),
+        )
+    }
+
+    private suspend fun reachFrequencyAction(
+        predictionId: String,
+        action: String,
+        params: ReachFrequencyActionParams,
+    ): ReachFrequencyPrediction =
+        http.call(
+            "POST",
+            "/ads/reach-frequency/$predictionId/$action",
+            ReachFrequencyPrediction.serializer(),
+            http.jsonBody(params, ReachFrequencyActionParams.serializer()),
+        )
+
+    private fun account(workspaceId: String?, connectionId: String, adAccountId: String): Map<String, Any?> =
+        connection(workspaceId, connectionId) + ("ad_account_id" to adAccountId)
 
     private fun connection(workspaceId: String?, connectionId: String): Map<String, Any?> =
         mapOf("workspace_id" to workspaceId, "connection_id" to connectionId)
