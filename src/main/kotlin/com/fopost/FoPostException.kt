@@ -35,6 +35,9 @@ public sealed class FoPostException(
     protected fun stringField(name: String): String? =
         (field(name) as? JsonPrimitive)?.takeIf { it.isString }?.content
 
+    protected fun longField(name: String): Long? =
+        (field(name) as? JsonPrimitive)?.takeUnless { it.isString }?.content?.toLongOrNull()
+
     override fun toString(): String {
         val suffix = code?.let { " ($it)" } ?: ""
         return "[$status$suffix] $message"
@@ -90,6 +93,25 @@ public class NotFoundException internal constructor(
     rateLimit: RateLimit? = null,
 ) : FoPostException(message, status, code, body, rateLimit)
 
+/** 413 — a file is bigger than the account may upload. */
+public class FileTooLargeException internal constructor(
+    message: String,
+    status: Int,
+    code: String?,
+    body: JsonElement?,
+    rateLimit: RateLimit? = null,
+) : FoPostException(message, status, code, body, rateLimit) {
+
+    /** The largest file the account may upload today. */
+    public val maxFileBytes: Long? get() = longField("max_file_bytes")
+
+    /** The size of the file that was rejected. */
+    public val fileBytes: Long? get() = longField("file_bytes")
+
+    /** Where the API suggests sending the user to raise the limit, when it says. */
+    public val upgradeUrl: String? get() = stringField("upgrade_url")
+}
+
 /** 429 — the rate limit was exceeded. Raised only once the automatic retries are spent. */
 public class RateLimitException internal constructor(
     message: String,
@@ -118,6 +140,15 @@ public class ApiException internal constructor(
     body: JsonElement?,
     rateLimit: RateLimit? = null,
 ) : FoPostException(message, status, code, body, rateLimit)
+
+/**
+ * A webhook delivery that [Webhooks.verify] refused. [code] is `missing_signature`,
+ * `invalid_signature`, `stale_timestamp` or `invalid_payload`.
+ */
+public class WebhookVerificationException internal constructor(
+    message: String,
+    code: String,
+) : FoPostException(message, 0, code, null, null)
 
 /** The request never got an answer: a connection failure, a timeout, or an unreadable body. */
 public class TransportException internal constructor(

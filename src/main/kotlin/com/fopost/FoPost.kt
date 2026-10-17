@@ -5,16 +5,25 @@ import com.fopost.internal.SDK_VERSION
 import com.fopost.internal.defaultJson
 import com.fopost.resource.AccountGroupsResource
 import com.fopost.resource.AccountsResource
+import com.fopost.resource.ActivityResource
 import com.fopost.resource.AdsResource
 import com.fopost.resource.BlogsResource
 import com.fopost.resource.AnalyticsResource
 import com.fopost.resource.AutomationsResource
+import com.fopost.resource.BlogResource
 import com.fopost.resource.CommunitiesResource
+import com.fopost.resource.BroadcastsResource
+import com.fopost.resource.ContactsResource
+import com.fopost.resource.GoogleAdsResource
+import com.fopost.resource.GoogleBusinessResource
 import com.fopost.resource.InboxResource
+import com.fopost.resource.KnowledgeResource
 import com.fopost.resource.LabelsResource
 import com.fopost.resource.MediaResource
 import com.fopost.resource.PostsResource
+import com.fopost.resource.SequencesResource
 import com.fopost.resource.ValidateResource
+import com.fopost.resource.WhatsappResource
 import com.fopost.resource.WebhooksResource
 import com.fopost.resource.WorkspacesResource
 import java.io.Closeable
@@ -105,19 +114,39 @@ public class FoPost @JvmOverloads constructor(
     /** The API root every request is sent to. */
     public val baseUrl: String get() = api.baseUrl
 
-    public val posts: PostsResource = PostsResource(api)
+    public val media: MediaResource = MediaResource(api)
+    public val posts: PostsResource = PostsResource(api, media)
     public val workspaces: WorkspacesResource = WorkspacesResource(api)
     public val accounts: AccountsResource = AccountsResource(api)
     public val accountGroups: AccountGroupsResource = AccountGroupsResource(api)
     public val communities: CommunitiesResource = CommunitiesResource(api)
     public val labels: LabelsResource = LabelsResource(api)
+
+    /** What happened in a workspace, and the security audit log. */
+    public val activity: ActivityResource = ActivityResource(api)
     public val webhooks: WebhooksResource = WebhooksResource(api)
     public val analytics: AnalyticsResource = AnalyticsResource(api)
     public val automations: AutomationsResource = AutomationsResource(api)
-    public val media: MediaResource = MediaResource(api)
     public val inbox: InboxResource = InboxResource(api)
+    public val contacts: ContactsResource = ContactsResource(api)
+    public val broadcasts: BroadcastsResource = BroadcastsResource(api)
+    public val sequences: SequencesResource = SequencesResource(api)
+
+    /** The workspace knowledge base, which grounds drafted replies. */
+    public val knowledge: KnowledgeResource = KnowledgeResource(api)
     public val ads: AdsResource = AdsResource(api)
+
+    /** Google Ads only: keywords, assets, conversions and raw GAQL. */
+    public val googleAds: GoogleAdsResource = GoogleAdsResource(api)
     public val validate: ValidateResource = ValidateResource(api)
+
+    /** Manage a connected Google Business Profile location. */
+    public val googleBusiness: GoogleBusinessResource = GoogleBusinessResource(api)
+
+    /** The blog: keyword plan, articles and the publishing target. */
+    public val blog: BlogResource = BlogResource(api)
+    /** WhatsApp Business: templates, flows, groups, blocking and commerce. */
+    public val whatsapp: WhatsappResource = WhatsappResource(api)
 
     /** Articles and products that already live on a connected site. */
     public val blogs: BlogsResource = BlogsResource(api)

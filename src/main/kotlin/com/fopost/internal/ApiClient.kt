@@ -2,6 +2,7 @@ package com.fopost.internal
 
 import com.fopost.ApiException
 import com.fopost.AuthenticationException
+import com.fopost.FileTooLargeException
 import com.fopost.FoPostException
 import com.fopost.NotFoundException
 import com.fopost.PaymentRequiredException
@@ -32,7 +33,6 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
@@ -147,12 +147,11 @@ internal class ApiClient(
     }
 
     /** A raw PUT to a presigned URL: no API key, no envelope, no retry. */
-    suspend fun putRaw(url: String, headers: Map<String, String>, content: ByteArray) {
-        val contentType = headers.entries.firstOrNull { it.key.equals("Content-Type", ignoreCase = true) }?.value
+    suspend fun putRaw(url: String, headers: Map<String, String>, content: RequestBody) {
         val request = Request.Builder()
             .url(url)
             .apply { headers.forEach { (name, value) -> header(name, value) } }
-            .put(content.toRequestBody(contentType?.toMediaTypeOrNull()))
+            .put(content)
             .build()
         val response = try {
             http.newCall(request).await()
@@ -174,6 +173,12 @@ internal class ApiClient(
         json.encodeToString(serializer, value).toRequestBody(JSON_MEDIA_TYPE)
 
     fun jsonBody(element: JsonElement): RequestBody = element.toString().toRequestBody(JSON_MEDIA_TYPE)
+
+    /** Decodes a JSON element a caller already pulled out of an envelope. */
+    fun <T> decodeElement(deserializer: KSerializer<T>, payload: JsonElement): T =
+        decode(deserializer, payload)
+    /** Peels the `{"data": ...}` wrapper for a caller that keeps the raw JSON. */
+    fun unwrap(element: JsonElement): JsonElement = unwrapEnvelope(element)
 
     private fun <T> decode(deserializer: KSerializer<T>, payload: JsonElement): T =
         try {
@@ -220,6 +225,7 @@ internal class ApiClient(
             status == 402 -> PaymentRequiredException(message, status, code, body, limit)
             status == 403 -> PermissionDeniedException(message, status, code, body, limit)
             status == 404 -> NotFoundException(message, status, code, body, limit)
+            status == 413 -> FileTooLargeException(message, status, code, body, limit)
             status == 429 -> RateLimitException(message, status, code, body, limit, retryAfter)
             status >= 500 -> ServerException(message, status, code, body, limit)
             else -> ApiException(message, status, code, body, limit)
