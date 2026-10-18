@@ -4,7 +4,7 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.3.0] - 2026-10-18
 
 ### Removed
 
@@ -22,6 +22,19 @@ All notable changes to this project are documented here. The format follows
 - `BlogSettings.goal` (`BlogGoal`), `focusTopics`, `avoidTopics` and `planRun` (`BlogPlanRun`,
   `BlogPlanRunStatus`), with `goal`, `focusTopics` and `avoidTopics` on `UpdateBlogSettingsParams`.
   `BlogKeyword.fitReason` says why a keyword serves the goal.
+- `accounts.listRedditSubreddits(accountId)`, `listRedditSubredditRules(accountId, subreddit)`,
+  `listRedditFlairs(accountId, subreddit)` and `setRedditDefaultSubreddit(accountId, subreddit)` as
+  `RedditSubreddit`, `RedditSubredditRule` and `RedditFlair`; a flair id is valid only in its
+  subreddit. `validate.subreddit(accountId, name)` answers the same existence check as
+  `SubredditValidation` before a post exists, and `inbox.vote(itemId, direction)` votes an item
+  `up` or `down` or takes the vote back with `none`. `Account.reconnectRequired` and `InboxItem.vote`
+  and `canVote` are new fields.
+- `blogs`: the blogs, articles and products that already live on a connected site, addressed by the
+  platform's own ids. `blogs.listBlogs(accountId)`, `listArticles`, `getArticle`, `createArticle`,
+  `updateArticle`, `deleteArticle`, `listProducts` and `updateProduct` as `RemoteBlog`,
+  `RemoteArticle` and `RemoteProduct`, with `ArticleParams` and `ProductParams` bodies.
+  `updateArticle` edits the live article in place and sends only the fields named. Reads need the
+  `posts` scope; writes need `publish` too.
 
 - `media.limits(workspaceId)`: the account's upload ceilings as `UploadLimits`, with the per-file
   maximum by any route, the multipart maximum, the file count per request, and the next tier.
