@@ -36,6 +36,9 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- The blog resource follows the live wire format: `workspace_id` on the query string, snake_case
+  response fields, and bare (unwrapped) single objects. `BlogWebsiteTest.status` is now `httpStatus`,
+  read from `http_status`; a failed test carries the API's message in `error`.
 - `blog.planKeywords` no longer fills the calendar: results land as `suggested`, and setting a
   keyword to `planned` picks it. `reviewHoldDays` is now the days before its planned date that a
   picked keyword starts being written.
