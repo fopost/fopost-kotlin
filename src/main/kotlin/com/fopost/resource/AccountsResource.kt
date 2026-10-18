@@ -48,6 +48,9 @@ import com.fopost.model.TikTokPlace
 import com.fopost.model.TikTokVideoSource
 import com.fopost.model.TokenRefresh
 import com.fopost.model.WebhookSubscription
+import com.fopost.model.XFollowResult
+import com.fopost.model.XPost
+import com.fopost.model.XSearchPage
 import com.fopost.model.YouTubeCaptionTrack
 import com.fopost.model.YouTubePlaylist
 import com.fopost.model.YouTubeTranscript
@@ -65,6 +68,8 @@ import com.fopost.param.SetTelegramBotCommandsParams
 import com.fopost.param.SwitchDiscordChannelParams
 import com.fopost.param.UpdateDiscordIdentityParams
 import com.fopost.param.UpdateSlackIdentityParams
+import com.fopost.param.XFollowParams
+import com.fopost.param.XSearchParams
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
@@ -853,5 +858,40 @@ public class AccountsResource internal constructor(private val http: ApiClient) 
             LinkedInMention.serializer(),
             query = mapOf("q" to query),
         )
-}
 
+    /**
+     * Follow an X user from the connected account. [userId] is the numeric X user id. Needs the
+     * `publish` scope as well as `inbox`; an account connected before the follow grant answers
+     * `409 reconnect_required` until it is reconnected. Metered to the workspace as an X API call.
+     */
+    public suspend fun followXUser(accountId: String, userId: String): XFollowResult =
+        http.call(
+            "POST",
+            "/accounts/$accountId/x/follow",
+            XFollowResult.serializer(),
+            http.jsonBody(XFollowParams(userId), XFollowParams.serializer()),
+        )
+
+    public suspend fun unfollowXUser(accountId: String, userId: String): XFollowResult =
+        http.call(
+            "POST",
+            "/accounts/$accountId/x/unfollow",
+            XFollowResult.serializer(),
+            http.jsonBody(XFollowParams(userId), XFollowParams.serializer()),
+        )
+
+    /**
+     * One X post by its numeric id, read with [accountId]'s token. Needs the `inbox` scope; 404
+     * when X has no such post. Metered to the workspace as an X API call.
+     */
+    public suspend fun getXPost(postId: String, accountId: String): XPost =
+        http.call("GET", "/x/posts/$postId", XPost.serializer(), query = mapOf("account_id" to accountId))
+
+    /**
+     * Recent X posts matching [XSearchParams.q], read with the account's token. Needs the `inbox`
+     * scope. Pass [XSearchPage.nextToken] back for the next page. Metered to the workspace as an
+     * X API call.
+     */
+    public suspend fun searchXPosts(params: XSearchParams): XSearchPage =
+        http.call("GET", "/x/search", XSearchPage.serializer(), query = params.toQuery(), unwrap = false)
+}

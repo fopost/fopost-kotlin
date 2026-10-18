@@ -16,6 +16,14 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- `inbox.repost`, `unrepost`, `bookmark` and `unbookmark` for X items, with `reposted`,
+  `bookmarked`, `canRepost` and `canBookmark` on `InboxItem`.
+- `accounts.followXUser(accountId, userId)` and `unfollowXUser`, answering an `XFollowResult`.
+- `accounts.getXPost(postId, accountId)` and `accounts.searchXPosts(XSearchParams)`, pass-through
+  reads of one X post and of recent X posts as `XPost`, paged by `XSearchPage.nextToken`.
+- Every X engagement call is metered to the workspace; a spent X balance answers a
+  `402 platform_balance_spent`, and an X account connected before this release answers
+  `409 reconnect_required` for repost, bookmark and follow until it is reconnected.
 - `ads.sendPixelConversions(params, idempotencyKey)`: the Conversions API send with a required
   `Idempotency-Key`; a replay answers `replayed = true` and sends nothing. `ads.conversionBatches`
   lists the stored batches as `ConversionBatch`, identifiers hashed.
