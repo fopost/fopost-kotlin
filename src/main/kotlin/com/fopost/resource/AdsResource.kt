@@ -103,6 +103,19 @@ import com.fopost.param.UpdateAudienceParams
 import com.fopost.param.UpdateCatalogParams
 import com.fopost.param.UpdateNetworkAdParams
 import com.fopost.param.UploadConversionsParams
+import com.fopost.param.UpdatePixelParams
+import com.fopost.param.UpdateCustomConversionParams
+import com.fopost.param.SharePixelParams
+import com.fopost.param.DeleteCustomConversionParams
+import com.fopost.param.CreatePixelParams
+import com.fopost.param.CreateCustomConversionParams
+import com.fopost.model.EventMatchQuality
+import com.fopost.model.CustomConversion
+import com.fopost.model.ConversionUploadResult
+import com.fopost.model.ConversionBatch
+import com.fopost.model.AdPixelStats
+import com.fopost.model.AdPixelDetail
+import com.fopost.model.AdPixel
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
@@ -578,17 +591,183 @@ public class AdsResource internal constructor(private val http: ApiClient) {
 
     /**
      * Offline conversions against a pixel the ad account owns. Identifiers are hashed before
-     * anything leaves FoPost; returns how many the network accepted.
+     * anything leaves FoPost. An [idempotencyKey] makes a retry replay the stored batch instead
+     * of sending it twice.
      */
-    public suspend fun uploadConversions(params: UploadConversionsParams): Long {
-        val data = http.call(
+    public suspend fun uploadConversions(
+        params: UploadConversionsParams,
+        idempotencyKey: String? = null,
+    ): ConversionUploadResult = http.call(
+        "POST",
+        "/ads/conversions",
+        ConversionUploadResult.serializer(),
+        http.jsonBody(params, UploadConversionsParams.serializer()),
+        headers = idempotencyKey?.let { mapOf(IDEMPOTENCY_KEY to it) },
+    )
+
+    /**
+     * The same send with the `Idempotency-Key` required: a second call with the same
+     * [idempotencyKey] answers the stored batch with `replayed = true` and sends nothing.
+     */
+    public suspend fun sendPixelConversions(
+        params: UploadConversionsParams,
+        idempotencyKey: String,
+    ): ConversionUploadResult = http.call(
+        "POST",
+        "/ads/conversions/events",
+        ConversionUploadResult.serializer(),
+        http.jsonBody(params, UploadConversionsParams.serializer()),
+        headers = mapOf(IDEMPOTENCY_KEY to idempotencyKey),
+    )
+
+    /** Stored conversion batches, newest first; identifiers come back as hashes only. */
+    public suspend fun conversionBatches(
+        workspaceId: String? = null,
+        connectionId: String? = null,
+        limit: Int? = null,
+    ): List<ConversionBatch> = http.callList(
+        "GET",
+        "/ads/conversions/events",
+        ConversionBatch.serializer(),
+        query = mapOf("workspace_id" to workspaceId, "connection_id" to connectionId, "limit" to limit),
+    )
+
+    /** The pixels an ad account owns. */
+    public suspend fun pixels(
+        connectionId: String,
+        adAccountId: String,
+        workspaceId: String? = null,
+    ): List<AdPixel> = http.callList(
+        "GET",
+        "/ads/pixels",
+        AdPixel.serializer(),
+        query = adAccount(workspaceId, connectionId, adAccountId),
+    )
+
+    /** Adds a pixel; the answer carries its install script. */
+    public suspend fun createPixel(params: CreatePixelParams): AdPixelDetail = http.call(
+        "POST",
+        "/ads/pixels",
+        AdPixelDetail.serializer(),
+        http.jsonBody(params, CreatePixelParams.serializer()),
+    )
+
+    /** One pixel with its install script and settings. */
+    public suspend fun pixel(
+        pixelId: String,
+        connectionId: String,
+        adAccountId: String,
+        workspaceId: String? = null,
+    ): AdPixelDetail = http.call(
+        "GET",
+        pixelPath(pixelId),
+        AdPixelDetail.serializer(),
+        query = adAccount(workspaceId, connectionId, adAccountId),
+    )
+
+    /** Renames a pixel or changes its data use setting. */
+    public suspend fun updatePixel(pixelId: String, params: UpdatePixelParams): AdPixelDetail = http.call(
+        "PATCH",
+        pixelPath(pixelId),
+        AdPixelDetail.serializer(),
+        http.jsonBody(params, UpdatePixelParams.serializer()),
+    )
+
+    /** Shares a pixel with another ad account under the same business portfolio. */
+    public suspend fun sharePixel(pixelId: String, params: SharePixelParams) {
+        http.send(
             "POST",
-            "/ads/conversions",
-            JsonObject.serializer(),
-            http.jsonBody(params, UploadConversionsParams.serializer()),
+            pixelPath(pixelId, "/share"),
+            http.jsonBody(params, SharePixelParams.serializer()),
         )
-        return data["accepted"]?.jsonPrimitive?.longOrNull ?: 0
     }
+
+    /** Events the pixel fired over the last 28 days. */
+    public suspend fun pixelStats(
+        pixelId: String,
+        connectionId: String,
+        adAccountId: String,
+        workspaceId: String? = null,
+    ): AdPixelStats = http.call(
+        "GET",
+        pixelPath(pixelId, "/stats"),
+        AdPixelStats.serializer(),
+        query = adAccount(workspaceId, connectionId, adAccountId),
+    )
+
+    /** How well the network matches each event's identifiers to people. */
+    public suspend fun eventMatchQuality(
+        pixelId: String,
+        connectionId: String,
+        adAccountId: String,
+        workspaceId: String? = null,
+    ): List<EventMatchQuality> = http.callList(
+        "GET",
+        pixelPath(pixelId, "/match-quality"),
+        EventMatchQuality.serializer(),
+        query = adAccount(workspaceId, connectionId, adAccountId),
+    )
+
+    /** The custom conversions an ad account defines. */
+    public suspend fun customConversions(
+        connectionId: String,
+        adAccountId: String,
+        workspaceId: String? = null,
+    ): List<CustomConversion> = http.callList(
+        "GET",
+        "/ads/custom-conversions",
+        CustomConversion.serializer(),
+        query = adAccount(workspaceId, connectionId, adAccountId),
+    )
+
+    /** Defines a custom conversion on a pixel. */
+    public suspend fun createCustomConversion(params: CreateCustomConversionParams): CustomConversion =
+        http.call(
+            "POST",
+            "/ads/custom-conversions",
+            CustomConversion.serializer(),
+            http.jsonBody(params, CreateCustomConversionParams.serializer()),
+        )
+
+    /** One custom conversion. */
+    public suspend fun customConversion(
+        customConversionId: String,
+        connectionId: String,
+        adAccountId: String,
+        workspaceId: String? = null,
+    ): CustomConversion = http.call(
+        "GET",
+        customConversionPath(customConversionId),
+        CustomConversion.serializer(),
+        query = adAccount(workspaceId, connectionId, adAccountId),
+    )
+
+    /** Renames, describes or revalues a custom conversion. */
+    public suspend fun updateCustomConversion(
+        customConversionId: String,
+        params: UpdateCustomConversionParams,
+    ): CustomConversion = http.call(
+        "PATCH",
+        customConversionPath(customConversionId),
+        CustomConversion.serializer(),
+        http.jsonBody(params, UpdateCustomConversionParams.serializer()),
+    )
+
+    /** Deletes a custom conversion. */
+    public suspend fun deleteCustomConversion(customConversionId: String, params: DeleteCustomConversionParams) {
+        http.send(
+            "DELETE",
+            customConversionPath(customConversionId),
+            http.jsonBody(params, DeleteCustomConversionParams.serializer()),
+        )
+    }
+
+    private fun pixelPath(pixelId: String, suffix: String = ""): String = "/ads/pixels/$pixelId$suffix"
+
+    private fun customConversionPath(id: String): String = "/ads/custom-conversions/$id"
+
+    private fun adAccount(workspaceId: String?, connectionId: String, adAccountId: String): Map<String, Any?> =
+        connection(workspaceId, connectionId) + ("ad_account_id" to adAccountId)
 
     /** One page of an ad's comments; pass `nextCursor` back as [after]. */
     public suspend fun comments(
@@ -1454,4 +1633,8 @@ public class AdsResource internal constructor(private val http: ApiClient) {
 
     private fun connection(workspaceId: String?, connectionId: String): Map<String, Any?> =
         mapOf("workspace_id" to workspaceId, "connection_id" to connectionId)
+
+    private companion object {
+        const val IDEMPOTENCY_KEY = "Idempotency-Key"
+    }
 }
