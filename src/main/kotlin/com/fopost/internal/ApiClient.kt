@@ -60,12 +60,14 @@ internal class ApiClient(
         path: String,
         body: RequestBody? = null,
         query: Map<String, Any?>? = null,
+        headers: Map<String, String>? = null,
     ): JsonElement {
         val request = Request.Builder()
             .url(url(path, query))
             .header("Accept", "application/json")
             .header("X-API-Key", apiKey)
             .header("User-Agent", userAgent)
+            .apply { headers?.forEach { (name, value) -> header(name, value) } }
             .method(method, body ?: emptyBodyFor(method))
             .build()
 
@@ -117,8 +119,9 @@ internal class ApiClient(
         body: RequestBody? = null,
         query: Map<String, Any?>? = null,
         unwrap: Boolean = true,
+        headers: Map<String, String>? = null,
     ): T {
-        val element = send(method, path, body, query)
+        val element = send(method, path, body, query, headers)
         val payload = if (unwrap) unwrapEnvelope(element) else element
         return decode(deserializer, payload)
     }
