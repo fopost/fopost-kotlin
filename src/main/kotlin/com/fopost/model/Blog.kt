@@ -76,38 +76,38 @@ public object BlogTargetKind {
  */
 @Serializable
 public data class BlogSettings(
-    @JsonNames("site_url") val siteUrl: String? = null,
+    @SerialName("site_url") @JsonNames("siteUrl") val siteUrl: String? = null,
     val topic: String? = null,
     val audience: String? = null,
     /** One of [BlogGoal]. */
     val goal: String? = null,
     /** What the blog wants to write about. */
-    @JsonNames("focus_topics") val focusTopics: String? = null,
+    @SerialName("focus_topics") @JsonNames("focusTopics") val focusTopics: String? = null,
     /** What the blog never writes about. */
-    @JsonNames("avoid_topics") val avoidTopics: String? = null,
+    @SerialName("avoid_topics") @JsonNames("avoidTopics") val avoidTopics: String? = null,
     val language: String? = null,
-    @JsonNames("location_code") val locationCode: Int? = null,
+    @SerialName("location_code") @JsonNames("locationCode") val locationCode: Int? = null,
     /** Articles planned per week; 0 turns planning off. */
-    @JsonNames("cadence_per_week") val cadencePerWeek: Int? = null,
+    @SerialName("cadence_per_week") @JsonNames("cadencePerWeek") val cadencePerWeek: Int? = null,
     /** Days before its planned date that a picked keyword starts being written. */
-    @JsonNames("review_hold_days") val reviewHoldDays: Int? = null,
+    @SerialName("review_hold_days") @JsonNames("reviewHoldDays") val reviewHoldDays: Int? = null,
     /** `draft`, `standard` or `best`. */
-    @JsonNames("image_tier") val imageTier: String? = null,
-    @JsonNames("in_body_images") val inBodyImages: Int? = null,
-    @JsonNames("min_words") val minWords: Int? = null,
-    @JsonNames("max_words") val maxWords: Int? = null,
-    @JsonNames("brand_voice_id") val brandVoiceId: String? = null,
+    @SerialName("image_tier") @JsonNames("imageTier") val imageTier: String? = null,
+    @SerialName("in_body_images") @JsonNames("inBodyImages") val inBodyImages: Int? = null,
+    @SerialName("min_words") @JsonNames("minWords") val minWords: Int? = null,
+    @SerialName("max_words") @JsonNames("maxWords") val maxWords: Int? = null,
+    @SerialName("brand_voice_id") @JsonNames("brandVoiceId") val brandVoiceId: String? = null,
     /** One of [BlogTargetKind]. */
-    @JsonNames("target_kind") val targetKind: String? = null,
-    @JsonNames("target_account_id") val targetAccountId: String? = null,
-    @JsonNames("target_platform") val targetPlatform: String? = null,
-    @JsonNames("website_url") val websiteUrl: String? = null,
-    @JsonNames("has_website_secret") val hasWebsiteSecret: Boolean? = null,
+    @SerialName("target_kind") @JsonNames("targetKind") val targetKind: String? = null,
+    @SerialName("target_account_id") @JsonNames("targetAccountId") val targetAccountId: String? = null,
+    @SerialName("target_platform") @JsonNames("targetPlatform") val targetPlatform: String? = null,
+    @SerialName("website_url") @JsonNames("websiteUrl") val websiteUrl: String? = null,
+    @SerialName("has_website_secret") @JsonNames("hasWebsiteSecret") val hasWebsiteSecret: Boolean? = null,
     /** The last keyword research run; null before the first. */
-    @JsonNames("plan_run") val planRun: BlogPlanRun? = null,
+    @SerialName("plan_run") @JsonNames("planRun") val planRun: BlogPlanRun? = null,
     /** Whether search volume and difficulty can be fetched on this deployment. */
-    @JsonNames("keyword_data_available") val keywordDataAvailable: Boolean? = null,
-    @JsonNames("updated_at") val updatedAt: Instant? = null,
+    @SerialName("keyword_data_available") @JsonNames("keywordDataAvailable") val keywordDataAvailable: Boolean? = null,
+    @SerialName("updated_at") @JsonNames("updatedAt") val updatedAt: Instant? = null,
 )
 
 /** The last keyword research run. [status] is one of [BlogPlanRunStatus]. */
@@ -117,7 +117,7 @@ public data class BlogPlanRun(
     val error: String? = null,
     /** New keywords the run found. */
     val added: Int? = null,
-    @JsonNames("finished_at") val finishedAt: Instant? = null,
+    @SerialName("finished_at") @JsonNames("finishedAt") val finishedAt: Instant? = null,
 )
 
 /**
@@ -126,24 +126,23 @@ public data class BlogPlanRun(
  * [websiteSecret] is set only when the call set `websiteUrl` for the first time, and is never
  * shown again — store it then.
  */
-@Serializable
 public data class BlogSettingsUpdate(
-    @SerialName("data") val settings: BlogSettings,
-    @JsonNames("website_secret") val websiteSecret: String? = null,
+    val settings: BlogSettings,
+    val websiteSecret: String? = null,
 )
 
 /** A freshly issued website secret. The previous one stops verifying at once. */
 @Serializable
 public data class BlogWebsiteSecret(
-    @JsonNames("website_secret") val websiteSecret: String? = null,
+    @SerialName("website_secret") @JsonNames("websiteSecret") val websiteSecret: String? = null,
 )
 
-/** The outcome of a test delivery to the website target. */
+/** The outcome of a test delivery to the website target. [error] explains a failed test. */
 @Serializable
 public data class BlogWebsiteTest(
     val ok: Boolean = false,
     /** The HTTP status the website answered, when it answered. */
-    val status: Int? = null,
+    @SerialName("http_status") @JsonNames("httpStatus") val httpStatus: Int? = null,
     val error: String? = null,
 )
 
@@ -168,7 +167,7 @@ public data class BlogPlanQueued(
 public data class BlogKeyword(
     val id: String? = null,
     val keyword: String? = null,
-    @JsonNames("search_volume") val searchVolume: Int? = null,
+    @SerialName("search_volume") @JsonNames("searchVolume") val searchVolume: Int? = null,
     /** 0 to 100. */
     val difficulty: Int? = null,
     val cpc: Double? = null,
@@ -176,16 +175,16 @@ public data class BlogKeyword(
     val source: String? = null,
     val status: String? = null,
     /** A calendar date, `YYYY-MM-DD`. */
-    @JsonNames("planned_for") val plannedFor: String? = null,
+    @SerialName("planned_for") @JsonNames("plannedFor") val plannedFor: String? = null,
     /** Why the keyword serves the blog goal. */
-    @JsonNames("fit_reason") val fitReason: String? = null,
-    @JsonNames("created_at") val createdAt: Instant? = null,
+    @SerialName("fit_reason") @JsonNames("fitReason") val fitReason: String? = null,
+    @SerialName("created_at") @JsonNames("createdAt") val createdAt: Instant? = null,
 )
 
 /** An image placed in an article. [position] is absent on the featured image. */
 @Serializable
 public data class BlogArticleImage(
-    @JsonNames("media_id") val mediaId: String? = null,
+    @SerialName("media_id") @JsonNames("mediaId") val mediaId: String? = null,
     val url: String? = null,
     val alt: String? = null,
     /** Index of the outline heading the image sits under. */
@@ -204,20 +203,20 @@ public data class BlogArticle(
     val slug: String? = null,
     val keyword: String? = null,
     val excerpt: String? = null,
-    @JsonNames("meta_title") val metaTitle: String? = null,
-    @JsonNames("meta_description") val metaDescription: String? = null,
-    @JsonNames("featured_image") val featuredImage: BlogArticleImage? = null,
+    @SerialName("meta_title") @JsonNames("metaTitle") val metaTitle: String? = null,
+    @SerialName("meta_description") @JsonNames("metaDescription") val metaDescription: String? = null,
+    @SerialName("featured_image") @JsonNames("featuredImage") val featuredImage: BlogArticleImage? = null,
     val tags: List<String> = emptyList(),
-    @JsonNames("word_count") val wordCount: Int? = null,
+    @SerialName("word_count") @JsonNames("wordCount") val wordCount: Int? = null,
     val status: String? = null,
     val origin: String? = null,
-    @JsonNames("review_until") val reviewUntil: Instant? = null,
-    @JsonNames("publish_at") val publishAt: Instant? = null,
-    @JsonNames("published_at") val publishedAt: Instant? = null,
-    @JsonNames("published_url") val publishedUrl: String? = null,
+    @SerialName("review_until") @JsonNames("reviewUntil") val reviewUntil: Instant? = null,
+    @SerialName("publish_at") @JsonNames("publishAt") val publishAt: Instant? = null,
+    @SerialName("published_at") @JsonNames("publishedAt") val publishedAt: Instant? = null,
+    @SerialName("published_url") @JsonNames("publishedUrl") val publishedUrl: String? = null,
     val error: String? = null,
-    @JsonNames("created_at") val createdAt: Instant? = null,
-    @JsonNames("updated_at") val updatedAt: Instant? = null,
+    @SerialName("created_at") @JsonNames("createdAt") val createdAt: Instant? = null,
+    @SerialName("updated_at") @JsonNames("updatedAt") val updatedAt: Instant? = null,
 )
 
 /** An article with its body, outline, brief and images: what `blog.getArticle` answers. */
@@ -228,26 +227,26 @@ public data class BlogArticleFull(
     val slug: String? = null,
     val keyword: String? = null,
     val excerpt: String? = null,
-    @JsonNames("meta_title") val metaTitle: String? = null,
-    @JsonNames("meta_description") val metaDescription: String? = null,
-    @JsonNames("featured_image") val featuredImage: BlogArticleImage? = null,
+    @SerialName("meta_title") @JsonNames("metaTitle") val metaTitle: String? = null,
+    @SerialName("meta_description") @JsonNames("metaDescription") val metaDescription: String? = null,
+    @SerialName("featured_image") @JsonNames("featuredImage") val featuredImage: BlogArticleImage? = null,
     val tags: List<String> = emptyList(),
-    @JsonNames("word_count") val wordCount: Int? = null,
+    @SerialName("word_count") @JsonNames("wordCount") val wordCount: Int? = null,
     val status: String? = null,
     val origin: String? = null,
-    @JsonNames("review_until") val reviewUntil: Instant? = null,
-    @JsonNames("publish_at") val publishAt: Instant? = null,
-    @JsonNames("published_at") val publishedAt: Instant? = null,
-    @JsonNames("published_url") val publishedUrl: String? = null,
+    @SerialName("review_until") @JsonNames("reviewUntil") val reviewUntil: Instant? = null,
+    @SerialName("publish_at") @JsonNames("publishAt") val publishAt: Instant? = null,
+    @SerialName("published_at") @JsonNames("publishedAt") val publishedAt: Instant? = null,
+    @SerialName("published_url") @JsonNames("publishedUrl") val publishedUrl: String? = null,
     val error: String? = null,
-    @JsonNames("created_at") val createdAt: Instant? = null,
-    @JsonNames("updated_at") val updatedAt: Instant? = null,
+    @SerialName("created_at") @JsonNames("createdAt") val createdAt: Instant? = null,
+    @SerialName("updated_at") @JsonNames("updatedAt") val updatedAt: Instant? = null,
     val instructions: String? = null,
     val outline: List<String> = emptyList(),
     /** The research the writer worked from. */
     val brief: JsonObject? = null,
-    @JsonNames("body_markdown") val bodyMarkdown: String? = null,
-    @JsonNames("body_html") val bodyHtml: String? = null,
+    @SerialName("body_markdown") @JsonNames("bodyMarkdown") val bodyMarkdown: String? = null,
+    @SerialName("body_html") @JsonNames("bodyHtml") val bodyHtml: String? = null,
     val images: List<BlogArticleImage> = emptyList(),
 )
 

@@ -23,7 +23,10 @@ import com.fopost.param.UpdateBlogSettingsParams
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.RequestBody
 
 /**
@@ -33,8 +36,8 @@ import okhttp3.RequestBody
  * [submitArticle] need the `posts` scope; [suggestSeeds], [planKeywords], [requestArticle]
  * and [regenerateArticle] spend AI credits and need `ai`; [publishArticle] needs `publish`.
  *
- * Every route is scoped by `workspaceId`, which travels as a query parameter or a body field as
- * the endpoint requires.
+ * Every route is scoped to one workspace: `workspace_id` on the query string for reads and per-id
+ * calls, `workspaceId` in the body for creates and settings writes.
  */
 public class BlogResource internal constructor(private val http: ApiClient) {
 
@@ -47,14 +50,20 @@ public class BlogResource internal constructor(private val http: ApiClient) {
      * Changes the settings. The result carries `websiteSecret` only when this call set
      * `websiteUrl` for the first time; it is never shown again.
      */
-    public suspend fun updateSettings(workspaceId: String, params: UpdateBlogSettingsParams): BlogSettingsUpdate =
-        http.call(
+    public suspend fun updateSettings(workspaceId: String, params: UpdateBlogSettingsParams): BlogSettingsUpdate {
+        // The secret sits beside the settings fields, not in a separate envelope.
+        val answer = http.call(
             "PATCH",
             "/blog/settings",
-            BlogSettingsUpdate.serializer(),
+            JsonObject.serializer(),
             workspaceBody(workspaceId, params, UpdateBlogSettingsParams.serializer()),
             unwrap = false,
         )
+        return BlogSettingsUpdate(
+            settings = http.decodeElement(BlogSettings.serializer(), answer),
+            websiteSecret = answer["website_secret"]?.jsonPrimitive?.contentOrNull,
+        )
+    }
 
     /** Issues a new website secret. The previous one stops verifying at once. */
     public suspend fun rotateWebsiteSecret(workspaceId: String): BlogWebsiteSecret =
@@ -73,11 +82,16 @@ public class BlogResource internal constructor(private val http: ApiClient) {
                 "/blog/settings/website-test",
                 BlogWebsiteTest.serializer(),
                 workspaceBody(workspaceId),
-            )
+            ).copy(ok = true)
         } catch (e: ServerException) {
-            // A failed test answers 502 with the same body, so the verdict is still readable.
-            val data = (e.body as? JsonObject)?.get("data") ?: throw e
-            http.decodeElement(BlogWebsiteTest.serializer(), data)
+            // A failed test answers 502 carrying the status the website gave.
+            if (e.status != 502) throw e
+            val body = e.body as? JsonObject ?: throw e
+            BlogWebsiteTest(
+                ok = false,
+                httpStatus = body["http_status"]?.jsonPrimitive?.intOrNull,
+                error = e.message,
+            )
         }
 
     // Keywords
@@ -209,7 +223,7 @@ public class BlogResource internal constructor(private val http: ApiClient) {
         http.send("DELETE", "/blog/articles/$articleId", null, workspaceQuery(workspaceId))
     }
 
-    private fun workspaceQuery(workspaceId: String): Map<String, Any?> = mapOf("workspaceId" to workspaceId)
+    private fun workspaceQuery(workspaceId: String): Map<String, Any?> = mapOf("workspace_id" to workspaceId)
 
     private fun workspaceBody(workspaceId: String): RequestBody =
         http.jsonBody(JsonObject(mapOf("workspaceId" to JsonPrimitive(workspaceId))))

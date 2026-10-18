@@ -34,30 +34,30 @@ class BlogTest {
     private lateinit var server: MockWebServer
 
     private val settings = """
-        {"siteUrl":"https://yourbrand.com","topic":"Social scheduling","audience":"Marketers",
-         "goal":"signups","focusTopics":"scheduling, analytics","avoidTopics":"politics",
-         "language":"en","locationCode":2840,"cadencePerWeek":2,"reviewHoldDays":3,
-         "imageTier":"standard","inBodyImages":1,"minWords":900,"maxWords":1500,
-         "brandVoiceId":null,"targetKind":"website","targetAccountId":null,"targetPlatform":null,
-         "websiteUrl":"https://yourbrand.com/hooks/fopost","hasWebsiteSecret":true,
-         "planRun":{"status":"done","error":null,"added":12,"finishedAt":"2026-10-11T09:05:00Z"},
-         "keywordDataAvailable":true,"updatedAt":"2026-10-11T09:00:00Z"}
+        {"site_url":"https://yourbrand.com","topic":"Social scheduling","audience":"Marketers",
+         "goal":"signups","focus_topics":"scheduling, analytics","avoid_topics":"politics",
+         "language":"en","location_code":2840,"cadence_per_week":2,"review_hold_days":3,
+         "image_tier":"standard","in_body_images":1,"min_words":900,"max_words":1500,
+         "brand_voice_id":null,"target_kind":"website","target_account_id":null,"target_platform":null,
+         "website_url":"https://yourbrand.com/hooks/fopost","has_website_secret":true,
+         "plan_run":{"status":"done","error":null,"added":12,"finished_at":"2026-10-11T09:05:00Z"},
+         "keyword_data_available":true,"updated_at":"2026-10-11T09:00:00Z"}
     """.trimIndent()
 
     private val keyword = """
-        {"id":"kw_1","keyword":"social media calendar","searchVolume":5400,"difficulty":42,
+        {"id":"kw_1","keyword":"social media calendar","search_volume":5400,"difficulty":42,
          "cpc":1.25,"intent":"informational","source":"provider","status":"planned",
-         "plannedFor":"2026-10-20","fitReason":"Buyers search it before choosing a tool",
-         "createdAt":"2026-10-11T09:00:00Z"}
+         "planned_for":"2026-10-20","fit_reason":"Buyers search it before choosing a tool",
+         "created_at":"2026-10-11T09:00:00Z"}
     """.trimIndent()
 
     private val article = """
         {"id":"ar_1","title":"How to build a social media calendar","slug":"social-media-calendar",
-         "keyword":"social media calendar","excerpt":"A calendar that holds.","metaTitle":null,
-         "metaDescription":null,"featuredImage":{"mediaId":"md_1","url":"https://cdn.example/f.jpg","alt":"A calendar"},
-         "tags":["planning"],"wordCount":1200,"status":"draft","origin":"plan","reviewUntil":"2026-10-14T09:00:00Z",
-         "publishAt":null,"publishedAt":null,"publishedUrl":null,"error":null,
-         "createdAt":"2026-10-11T09:00:00Z","updatedAt":"2026-10-11T10:00:00Z"}
+         "keyword":"social media calendar","excerpt":"A calendar that holds.","meta_title":null,
+         "meta_description":null,"featured_image":{"media_id":"md_1","url":"https://cdn.example/f.jpg","alt":"A calendar"},
+         "tags":["planning"],"word_count":1200,"status":"draft","origin":"plan","review_until":"2026-10-14T09:00:00Z",
+         "publish_at":null,"published_at":null,"published_url":null,"error":null,
+         "created_at":"2026-10-11T09:00:00Z","updated_at":"2026-10-11T10:00:00Z"}
     """.trimIndent()
 
     @BeforeEach
@@ -73,8 +73,8 @@ class BlogTest {
 
     @Test
     fun `settings travel by query on GET and in the body on PATCH`() = runTest {
-        server.enqueue(json(200, """{"data":$settings}"""))
-        server.enqueue(json(200, """{"data":$settings,"websiteSecret":"whsec_first"}"""))
+        server.enqueue(json(200, settings))
+        server.enqueue(json(200, settings.dropLast(1) + ""","website_secret":"whsec_first"}"""))
 
         server.client().use {
             val current = it.blog.getSettings("w1")
@@ -84,6 +84,8 @@ class BlogTest {
             assertEquals("politics", current.avoidTopics)
             assertEquals(BlogPlanRunStatus.DONE, current.planRun?.status)
             assertEquals(12, current.planRun?.added)
+            assertEquals("https://yourbrand.com/hooks/fopost", current.websiteUrl)
+            assertEquals(true, current.keywordDataAvailable)
 
             val updated = it.blog.updateSettings(
                 "w1",
@@ -100,7 +102,7 @@ class BlogTest {
 
         val get = server.takeRequest()
         assertEquals("GET", get.method)
-        assertEquals("/v1/blog/settings?workspaceId=w1", get.path)
+        assertEquals("/v1/blog/settings?workspace_id=w1", get.path)
 
         val patch = server.takeRequest()
         assertEquals("PATCH", patch.method)
@@ -117,14 +119,18 @@ class BlogTest {
 
     @Test
     fun `the website secret rotates and the website test reads a 502 verdict`() = runTest {
-        server.enqueue(json(200, """{"data":{"websiteSecret":"whsec_next"}}"""))
-        server.enqueue(json(502, """{"data":{"ok":false,"status":500,"error":"Website answered 500"}}"""))
+        server.enqueue(json(200, """{"website_secret":"whsec_next"}"""))
+        server.enqueue(json(200, """{"http_status":200}"""))
+        server.enqueue(json(502, """{"error":"website_test_failed","message":"Website answered 500","http_status":500}"""))
 
         server.client(maxRetries = 1).use {
             assertEquals("whsec_next", it.blog.rotateWebsiteSecret("w1").websiteSecret)
+            val passed = it.blog.testWebsite("w1")
+            assertTrue(passed.ok)
+            assertEquals(200, passed.httpStatus)
             val test = it.blog.testWebsite("w1")
             assertFalse(test.ok)
-            assertEquals(500, test.status)
+            assertEquals(500, test.httpStatus)
             assertEquals("Website answered 500", test.error)
         }
 
@@ -132,14 +138,15 @@ class BlogTest {
         assertEquals("/v1/blog/settings/website-secret", rotate.path)
         assertEquals("w1", Json.parseToJsonElement(rotate.body.readUtf8()).jsonObject["workspaceId"]?.jsonPrimitive?.content)
         assertEquals("/v1/blog/settings/website-test", server.takeRequest().path)
+        assertEquals("/v1/blog/settings/website-test", server.takeRequest().path)
     }
 
     @Test
     fun `keywords list, plan, add, update and delete`() = runTest {
         server.enqueue(json(200, """{"data":[$keyword]}"""))
-        server.enqueue(json(202, """{"data":{"status":"queued"}}"""))
-        server.enqueue(json(201, """{"data":$keyword}"""))
-        server.enqueue(json(200, """{"data":$keyword}"""))
+        server.enqueue(json(202, """{"status":"queued"}"""))
+        server.enqueue(json(201, keyword))
+        server.enqueue(json(200, keyword))
         server.enqueue(json(204, ""))
 
         server.client().use {
@@ -156,7 +163,7 @@ class BlogTest {
         }
 
         val list = server.takeRequest()
-        assertEquals("/v1/blog/keywords?workspaceId=w1&status=planned%2Csuggested&limit=10", list.path)
+        assertEquals("/v1/blog/keywords?workspace_id=w1&status=planned%2Csuggested&limit=10", list.path)
 
         val plan = server.takeRequest()
         assertEquals("POST", plan.method)
@@ -174,19 +181,19 @@ class BlogTest {
 
         val update = server.takeRequest()
         assertEquals("PATCH", update.method)
-        assertEquals("/v1/blog/keywords/kw_1?workspaceId=w1", update.path)
+        assertEquals("/v1/blog/keywords/kw_1?workspace_id=w1", update.path)
         val updateBody = Json.parseToJsonElement(update.body.readUtf8()).jsonObject
         assertEquals("dismissed", updateBody["status"]?.jsonPrimitive?.content)
         assertFalse(updateBody.containsKey("workspaceId"))
 
         val delete = server.takeRequest()
         assertEquals("DELETE", delete.method)
-        assertEquals("/v1/blog/keywords/kw_1?workspaceId=w1", delete.path)
+        assertEquals("/v1/blog/keywords/kw_1?workspace_id=w1", delete.path)
     }
 
     @Test
     fun `seed suggestions post the workspace, seeds and prompt`() = runTest {
-        server.enqueue(json(200, """{"data":{"seeds":["social media calendar","post scheduler"]}}"""))
+        server.enqueue(json(200, """{"seeds":["social media calendar","post scheduler"]}"""))
         server.enqueue(
             json(402, """{"error":"insufficient_credits","message":"balance ran out","upgrade_url":"https://fopost.com/billing"}"""),
         )
@@ -216,7 +223,7 @@ class BlogTest {
 
     @Test
     fun `submitting an article moves it to review and a wrong state is a 409`() = runTest {
-        server.enqueue(json(200, """{"data":${article.replace("\"status\":\"draft\"", "\"status\":\"in_review\"")}}"""))
+        server.enqueue(json(200, article.replace("\"status\":\"draft\"", "\"status\":\"in_review\"")))
         server.enqueue(json(409, """{"error":"invalid_state","message":"only a draft can be submitted"}"""))
 
         server.client(maxRetries = 1).use { client ->
@@ -229,28 +236,30 @@ class BlogTest {
 
         val submit = server.takeRequest()
         assertEquals("POST", submit.method)
-        assertEquals("/v1/blog/articles/ar_1/submit?workspaceId=w1", submit.path)
+        assertEquals("/v1/blog/articles/ar_1/submit?workspace_id=w1", submit.path)
         assertEquals(0L, submit.bodySize)
     }
 
     @Test
     fun `articles list, request, get, update and act`() = runTest {
         val full = article.trimEnd('}') + ""","instructions":null,"outline":["Why","How"],
-            "brief":{"sources":2},"bodyMarkdown":"# Hello","bodyHtml":"<h1>Hello</h1>",
-            "images":[{"mediaId":"md_2","url":"https://cdn.example/b.jpg","alt":"Board","position":1}]}"""
+            "brief":{"sources":2},"body_markdown":"# Hello","body_html":"<h1>Hello</h1>",
+            "images":[{"media_id":"md_2","url":"https://cdn.example/b.jpg","alt":"Board","position":1}]}"""
         server.enqueue(json(200, """{"data":[$article]}"""))
-        server.enqueue(json(202, """{"data":$article}"""))
-        server.enqueue(json(200, """{"data":$full}"""))
-        server.enqueue(json(200, """{"data":$full}"""))
-        server.enqueue(json(202, """{"data":$article}"""))
-        server.enqueue(json(202, """{"data":$article}"""))
-        server.enqueue(json(200, """{"data":$article}"""))
+        server.enqueue(json(202, article))
+        server.enqueue(json(200, full))
+        server.enqueue(json(200, full))
+        server.enqueue(json(202, article))
+        server.enqueue(json(202, article))
+        server.enqueue(json(200, article))
         server.enqueue(json(204, ""))
 
         server.client().use {
             val listed = it.blog.listArticles("w1", BlogArticleListParams(status = "draft", limit = 5))
             assertEquals(BlogArticleStatus.DRAFT, listed.single().status)
             assertEquals("A calendar", listed.single().featuredImage?.alt)
+            assertEquals("md_1", listed.single().featuredImage?.mediaId)
+            assertEquals(1200, listed.single().wordCount)
 
             val requested = it.blog.requestArticle("w1", CreateBlogArticleParams(keywordId = "kw_1", instructions = "Short."))
             assertEquals("ar_1", requested.id)
@@ -268,7 +277,7 @@ class BlogTest {
             it.blog.deleteArticle("w1", "ar_1")
         }
 
-        assertEquals("/v1/blog/articles?workspaceId=w1&status=draft&limit=5", server.takeRequest().path)
+        assertEquals("/v1/blog/articles?workspace_id=w1&status=draft&limit=5", server.takeRequest().path)
 
         val request = server.takeRequest()
         assertEquals("POST", request.method)
@@ -279,11 +288,11 @@ class BlogTest {
         assertEquals("Short.", requestBody["instructions"]?.jsonPrimitive?.content)
         assertFalse(requestBody.containsKey("title"))
 
-        assertEquals("/v1/blog/articles/ar_1?workspaceId=w1", server.takeRequest().path)
+        assertEquals("/v1/blog/articles/ar_1?workspace_id=w1", server.takeRequest().path)
 
         val update = server.takeRequest()
         assertEquals("PATCH", update.method)
-        assertEquals("/v1/blog/articles/ar_1?workspaceId=w1", update.path)
+        assertEquals("/v1/blog/articles/ar_1?workspace_id=w1", update.path)
         val updateBody = Json.parseToJsonElement(update.body.readUtf8()).jsonObject
         assertEquals("New title", updateBody["title"]?.jsonPrimitive?.content)
         assertEquals("planning", updateBody["tags"]?.jsonArray?.single()?.jsonPrimitive?.content)
@@ -291,11 +300,11 @@ class BlogTest {
         for (action in listOf("regenerate", "publish", "reject")) {
             val sent = server.takeRequest()
             assertEquals("POST", sent.method)
-            assertEquals("/v1/blog/articles/ar_1/$action?workspaceId=w1", sent.path)
+            assertEquals("/v1/blog/articles/ar_1/$action?workspace_id=w1", sent.path)
         }
         val delete = server.takeRequest()
         assertEquals("DELETE", delete.method)
-        assertEquals("/v1/blog/articles/ar_1?workspaceId=w1", delete.path)
+        assertEquals("/v1/blog/articles/ar_1?workspace_id=w1", delete.path)
     }
 
     @Test
