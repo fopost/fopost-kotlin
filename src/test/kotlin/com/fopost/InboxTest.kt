@@ -181,6 +181,38 @@ class InboxTest {
     }
 
     @Test
+    fun `reposts and bookmarks an X item`() = runTest {
+        server.enqueue(
+            json(
+                200,
+                """{"data":{"id":"ib_1","reposted":true,"bookmarked":false,"can_repost":true,"can_bookmark":true}}""",
+            ),
+        )
+        server.enqueue(json(200, """{"data":{"id":"ib_1","reposted":false}}"""))
+        server.enqueue(json(200, """{"data":{"id":"ib_1","bookmarked":true}}"""))
+        server.enqueue(json(200, """{"data":{"id":"ib_1","bookmarked":false}}"""))
+
+        server.client().use { client ->
+            val reposted = client.inbox.repost("ib_1")
+            assertEquals(true, reposted.reposted)
+            assertEquals(false, reposted.bookmarked)
+            assertEquals(true, reposted.canRepost)
+            assertEquals(true, reposted.canBookmark)
+
+            assertEquals(false, client.inbox.unrepost("ib_1").reposted)
+            assertEquals(true, client.inbox.bookmark("ib_1").bookmarked)
+            assertEquals(false, client.inbox.unbookmark("ib_1").bookmarked)
+        }
+
+        listOf("repost", "unrepost", "bookmark", "unbookmark").forEach { action ->
+            val request = server.takeRequest()
+            assertEquals("POST", request.method)
+            assertEquals("/v1/inbox/ib_1/$action", request.path)
+            assertEquals(0L, request.bodySize)
+        }
+    }
+
+    @Test
     fun `replies with media, starts a conversation and sets typing`() = runTest {
         server.enqueue(json(200, """{"data":{"item":{"id":"ib_1"},"reply":{"externalId":"m_1"}}}"""))
         server.enqueue(json(201, """{"data":{"conversationId":"t_9","item":{"id":"ib_9","type":"dm","direction":"outbound"}}}"""))
