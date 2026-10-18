@@ -5,6 +5,8 @@ import com.fopost.model.Automation
 import com.fopost.model.AutomationRun
 import com.fopost.model.AutomationStats
 import com.fopost.model.AutomationTrigger
+import com.fopost.model.AutomationVersion
+import com.fopost.model.AutomationVersionRestore
 import com.fopost.model.Page
 import com.fopost.param.AutomationParams
 import kotlinx.serialization.json.JsonObject
@@ -70,6 +72,26 @@ public class AutomationsResource internal constructor(private val http: ApiClien
             "/automations/$automationId/trigger",
             AutomationTrigger.serializer(),
             http.jsonBody(payload ?: JsonObject(emptyMap())),
+        )
+
+    /** Saved versions of the graph, newest first, with what each one added or removed. */
+    public suspend fun versions(automationId: String, page: Int? = null, perPage: Int? = null): Page<AutomationVersion> =
+        http.page(
+            "/automations/$automationId/versions",
+            AutomationVersion.serializer(),
+            mapOf("page" to page, "per_page" to perPage),
+        )
+
+    /** One version, with its full graph. */
+    public suspend fun version(automationId: String, version: Int): AutomationVersion =
+        http.call("GET", "/automations/$automationId/versions/$version", AutomationVersion.serializer())
+
+    /** Make an old graph current again. It is saved as a new version, so nothing is lost. */
+    public suspend fun restoreVersion(automationId: String, version: Int): AutomationVersionRestore =
+        http.call(
+            "POST",
+            "/automations/$automationId/versions/$version/restore",
+            AutomationVersionRestore.serializer(),
         )
 
     public suspend fun stats(): AutomationStats =

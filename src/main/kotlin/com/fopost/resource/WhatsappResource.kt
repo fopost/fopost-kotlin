@@ -43,11 +43,19 @@ public class WhatsappResource internal constructor(private val http: ApiClient) 
 
     // ─── Profile ──────────────────────────────────────────────────────────
 
-    /** The profile on the number, plus its quality rating and limit tier. */
+    /**
+     * The profile on the number, plus its quality rating and limit tier.
+     *
+     * Wraps the API's `getWhatsappProfile` operation.
+     */
     public suspend fun profile(accountId: String): WhatsappProfile =
         http.call("GET", "${base(accountId)}/profile", WhatsappProfile.serializer())
 
-    /** A partial update: omitted fields keep their value. */
+    /**
+     * A partial update: omitted fields keep their value.
+     *
+     * Wraps the API's `updateWhatsappProfile` operation.
+     */
     public suspend fun updateProfile(
         accountId: String,
         params: UpdateWhatsappProfileParams,
@@ -59,7 +67,11 @@ public class WhatsappResource internal constructor(private val http: ApiClient) 
             http.jsonBody(params, UpdateWhatsappProfileParams.serializer()),
         )
 
-    /** A review, not a write: the number keeps its old name until it passes. */
+    /**
+     * A review, not a write: the number keeps its old name until it passes.
+     *
+     * Wraps the API's `requestWhatsappDisplayName` operation.
+     */
     public suspend fun requestDisplayName(accountId: String, displayName: String) {
         http.send(
             "POST",
@@ -68,7 +80,11 @@ public class WhatsappResource internal constructor(private val http: ApiClient) 
         )
     }
 
-    /** Sets the public username on the number. */
+    /**
+     * Sets the public username on the number.
+     *
+     * Wraps the API's `setWhatsappUsername` operation.
+     */
     public suspend fun setUsername(accountId: String, username: String): WhatsappProfile =
         http.call(
             "PUT",
@@ -79,7 +95,11 @@ public class WhatsappResource internal constructor(private val http: ApiClient) 
 
     // ─── Templates ────────────────────────────────────────────────────────
 
-    /** Every template on the account, with its review status. */
+    /**
+     * Every template on the account, with its review status.
+     *
+     * Wraps the API's `listWhatsappTemplates` operation.
+     */
     public suspend fun templates(accountId: String, after: String? = null): List<WhatsappTemplate> =
         http.callList(
             "GET",
@@ -88,7 +108,11 @@ public class WhatsappResource internal constructor(private val http: ApiClient) 
             query = mapOf("after" to after),
         )
 
-    /** The pre-written templates the platform offers, for adapting. */
+    /**
+     * The pre-written templates the platform offers, for adapting.
+     *
+     * Wraps the API's `listWhatsappTemplateLibrary` operation.
+     */
     public suspend fun templateLibrary(accountId: String, search: String? = null): List<JsonElement> =
         http.callList(
             "GET",
@@ -97,13 +121,19 @@ public class WhatsappResource internal constructor(private val http: ApiClient) 
             query = mapOf("search" to search),
         )
 
-    /** One template and the review status it currently has. */
+    /**
+     * One template and the review status it currently has.
+     *
+     * Wraps the API's `getWhatsappTemplate` operation.
+     */
     public suspend fun template(accountId: String, templateId: String): WhatsappTemplate =
         http.call("GET", "${base(accountId)}/templates/$templateId", WhatsappTemplate.serializer())
 
     /**
      * Files a template for review. The result carries the status the platform
      * assigned, which is `PENDING` on a normal submission.
+     *
+     * Wraps the API's `createWhatsappTemplate` operation.
      */
     public suspend fun createTemplate(
         accountId: String,
@@ -116,7 +146,11 @@ public class WhatsappResource internal constructor(private val http: ApiClient) 
             http.jsonBody(params, CreateWhatsappTemplateParams.serializer()),
         )
 
-    /** Creates a template from one of the platform's library entries. */
+    /**
+     * Creates a template from one of the platform's library entries.
+     *
+     * Wraps the API's `importWhatsappTemplate` operation.
+     */
     public suspend fun importTemplate(
         accountId: String,
         params: ImportWhatsappTemplateParams,
@@ -128,7 +162,11 @@ public class WhatsappResource internal constructor(private val http: ApiClient) 
             http.jsonBody(params, ImportWhatsappTemplateParams.serializer()),
         )
 
-    /** Edits a template. The name cannot change. */
+    /**
+     * Edits a template. The name cannot change.
+     *
+     * Wraps the API's `updateWhatsappTemplate` operation.
+     */
     public suspend fun updateTemplate(
         accountId: String,
         templateId: String,
@@ -141,7 +179,11 @@ public class WhatsappResource internal constructor(private val http: ApiClient) 
             http.jsonBody(params, UpdateWhatsappTemplateParams.serializer()),
         )
 
-    /** The name is required: it is what the platform deletes by. */
+    /**
+     * The name is required: it is what the platform deletes by.
+     *
+     * Wraps the API's `deleteWhatsappTemplate` operation.
+     */
     public suspend fun deleteTemplate(accountId: String, templateId: String, name: String) {
         http.send(
             "DELETE",
@@ -152,11 +194,19 @@ public class WhatsappResource internal constructor(private val http: ApiClient) 
 
     // ─── Groups ───────────────────────────────────────────────────────────
 
-    /** The groups this number created. */
+    /**
+     * The groups this number created.
+     *
+     * Wraps the API's `listWhatsappGroups` operation.
+     */
     public suspend fun groups(accountId: String): List<WhatsappGroup> =
         http.callList("GET", "${base(accountId)}/groups", WhatsappGroup.serializer())
 
-    /** Participation is invite-only: send the invite link, there is no add. */
+    /**
+     * Participation is invite-only: send the invite link, there is no add.
+     *
+     * Wraps the API's `createWhatsappGroup` operation.
+     */
     public suspend fun createGroup(accountId: String, params: WhatsappGroupParams): WhatsappGroup =
         http.call(
             "POST",
@@ -165,11 +215,19 @@ public class WhatsappResource internal constructor(private val http: ApiClient) 
             http.jsonBody(params, WhatsappGroupParams.serializer()),
         )
 
-    /** One group and its participant count. */
+    /**
+     * One group and its participant count.
+     *
+     * Wraps the API's `getWhatsappGroup` operation.
+     */
     public suspend fun group(accountId: String, groupId: String): WhatsappGroup =
         http.call("GET", "${base(accountId)}/groups/$groupId", WhatsappGroup.serializer())
 
-    /** Changes a group's subject or description. */
+    /**
+     * Changes a group's subject or description.
+     *
+     * Wraps the API's `updateWhatsappGroup` operation.
+     */
     public suspend fun updateGroup(
         accountId: String,
         groupId: String,
@@ -182,16 +240,28 @@ public class WhatsappResource internal constructor(private val http: ApiClient) 
             http.jsonBody(params, WhatsappGroupParams.serializer()),
         )
 
-    /** Removes the group. */
+    /**
+     * Removes the group.
+     *
+     * Wraps the API's `deleteWhatsappGroup` operation.
+     */
     public suspend fun deleteGroup(accountId: String, groupId: String) {
         http.send("DELETE", "${base(accountId)}/groups/$groupId")
     }
 
-    /** The link someone joins the group with. */
+    /**
+     * The link someone joins the group with.
+     *
+     * Wraps the API's `getWhatsappGroupInviteLink` operation.
+     */
     public suspend fun groupInviteLink(accountId: String, groupId: String): String? =
         inviteLinkOf(http.send("GET", "${base(accountId)}/groups/$groupId/invite-link"))
 
-    /** Issues a new link and invalidates the old one. */
+    /**
+     * Issues a new link and invalidates the old one.
+     *
+     * Wraps the API's `resetWhatsappGroupInviteLink` operation.
+     */
     public suspend fun resetGroupInviteLink(accountId: String, groupId: String): String? =
         inviteLinkOf(http.send("POST", "${base(accountId)}/groups/$groupId/invite-link"))
 
@@ -203,7 +273,11 @@ public class WhatsappResource internal constructor(private val http: ApiClient) 
     private fun JsonPrimitive.contentOrNullSafe(): String? =
         if (this.isString) this.content else null
 
-    /** Removes people from the group. There is no matching add. */
+    /**
+     * Removes people from the group. There is no matching add.
+     *
+     * Wraps the API's `removeWhatsappGroupParticipants` operation.
+     */
     public suspend fun removeGroupParticipants(
         accountId: String,
         groupId: String,
@@ -222,7 +296,11 @@ public class WhatsappResource internal constructor(private val http: ApiClient) 
 
     // ─── Blocking ─────────────────────────────────────────────────────────
 
-    /** The numbers this account has blocked. */
+    /**
+     * The numbers this account has blocked.
+     *
+     * Wraps the API's `listWhatsappBlocked` operation.
+     */
     public suspend fun blocked(accountId: String, after: String? = null): List<String> =
         http.callList(
             "GET",
@@ -231,7 +309,11 @@ public class WhatsappResource internal constructor(private val http: ApiClient) 
             query = mapOf("after" to after),
         )
 
-    /** Blocks up to 100 numbers, and names the ones the platform refused. */
+    /**
+     * Blocks up to 100 numbers, and names the ones the platform refused.
+     *
+     * Wraps the API's `blockWhatsappUsers` operation.
+     */
     public suspend fun blockUsers(accountId: String, users: List<String>): WhatsappBlockResult =
         http.call(
             "POST",
@@ -240,7 +322,11 @@ public class WhatsappResource internal constructor(private val http: ApiClient) 
             http.jsonBody(usersBody(users)),
         )
 
-    /** Unblocks up to 100 numbers. */
+    /**
+     * Unblocks up to 100 numbers.
+     *
+     * Wraps the API's `unblockWhatsappUsers` operation.
+     */
     public suspend fun unblockUsers(accountId: String, users: List<String>): WhatsappBlockResult =
         http.call(
             "DELETE",
@@ -251,11 +337,19 @@ public class WhatsappResource internal constructor(private val http: ApiClient) 
 
     // ─── Commerce ─────────────────────────────────────────────────────────
 
-    /** Whether the cart and catalog show on the number. */
+    /**
+     * Whether the cart and catalog show on the number.
+     *
+     * Wraps the API's `getWhatsappCommerce` operation.
+     */
     public suspend fun commerceSettings(accountId: String): WhatsappCommerceSettings =
         http.call("GET", "${base(accountId)}/commerce", WhatsappCommerceSettings.serializer())
 
-    /** Turns the cart or the catalog on or off. */
+    /**
+     * Turns the cart or the catalog on or off.
+     *
+     * Wraps the API's `updateWhatsappCommerce` operation.
+     */
     public suspend fun updateCommerceSettings(
         accountId: String,
         params: UpdateWhatsappCommerceParams,
@@ -267,7 +361,11 @@ public class WhatsappResource internal constructor(private val http: ApiClient) 
             http.jsonBody(params, UpdateWhatsappCommerceParams.serializer()),
         )
 
-    /** Points the number at a catalog the customer already owns. */
+    /**
+     * Points the number at a catalog the customer already owns.
+     *
+     * Wraps the API's `linkWhatsappCatalog` operation.
+     */
     public suspend fun linkCatalog(accountId: String, catalogId: String): WhatsappCommerceSettings =
         http.call(
             "POST",
@@ -278,15 +376,27 @@ public class WhatsappResource internal constructor(private val http: ApiClient) 
 
     // ─── Flows ────────────────────────────────────────────────────────────
 
-    /** The in-chat forms on this account, with their validation errors. */
+    /**
+     * The in-chat forms on this account, with their validation errors.
+     *
+     * Wraps the API's `listWhatsappFlows` operation.
+     */
     public suspend fun flows(accountId: String): List<WhatsappFlow> =
         http.callList("GET", "${base(accountId)}/flows", WhatsappFlow.serializer())
 
-    /** One flow and what the platform found wrong with it. */
+    /**
+     * One flow and what the platform found wrong with it.
+     *
+     * Wraps the API's `getWhatsappFlow` operation.
+     */
     public suspend fun flow(accountId: String, flowId: String): WhatsappFlow =
         http.call("GET", "${base(accountId)}/flows/$flowId", WhatsappFlow.serializer())
 
-    /** Creates a draft flow; its screens are uploaded separately. */
+    /**
+     * Creates a draft flow; its screens are uploaded separately.
+     *
+     * Wraps the API's `createWhatsappFlow` operation.
+     */
     public suspend fun createFlow(
         accountId: String,
         params: CreateWhatsappFlowParams,
@@ -298,7 +408,11 @@ public class WhatsappResource internal constructor(private val http: ApiClient) 
             http.jsonBody(params, CreateWhatsappFlowParams.serializer()),
         )
 
-    /** Changes a flow's name, categories or endpoint. */
+    /**
+     * Changes a flow's name, categories or endpoint.
+     *
+     * Wraps the API's `updateWhatsappFlow` operation.
+     */
     public suspend fun updateFlow(
         accountId: String,
         flowId: String,
@@ -311,7 +425,11 @@ public class WhatsappResource internal constructor(private val http: ApiClient) 
             http.jsonBody(params, UpdateWhatsappFlowParams.serializer()),
         )
 
-    /** Drafts only; a published flow is deprecated instead. */
+    /**
+     * Drafts only; a published flow is deprecated instead.
+     *
+     * Wraps the API's `deleteWhatsappFlow` operation.
+     */
     public suspend fun deleteFlow(accountId: String, flowId: String) {
         http.send("DELETE", "${base(accountId)}/flows/$flowId")
     }
@@ -319,6 +437,8 @@ public class WhatsappResource internal constructor(private val http: ApiClient) 
     /**
      * Replaces the flow's screens. The platform answers with its validation
      * errors rather than refusing, so they come back as data.
+     *
+     * Wraps the API's `uploadWhatsappFlowJson` operation.
      */
     public suspend fun uploadFlowJson(
         accountId: String,
@@ -332,15 +452,27 @@ public class WhatsappResource internal constructor(private val http: ApiClient) 
             http.jsonBody(buildJsonObject { put("flow_json", flowJson) }),
         )
 
-    /** Makes the flow sendable. A published flow can no longer be deleted. */
+    /**
+     * Makes the flow sendable. A published flow can no longer be deleted.
+     *
+     * Wraps the API's `publishWhatsappFlow` operation.
+     */
     public suspend fun publishFlow(accountId: String, flowId: String): WhatsappFlow =
         http.call("POST", "${base(accountId)}/flows/$flowId/publish", WhatsappFlow.serializer())
 
-    /** Retires a published flow. */
+    /**
+     * Retires a published flow.
+     *
+     * Wraps the API's `deprecateWhatsappFlow` operation.
+     */
     public suspend fun deprecateFlow(accountId: String, flowId: String): WhatsappFlow =
         http.call("POST", "${base(accountId)}/flows/$flowId/deprecate", WhatsappFlow.serializer())
 
-    /** What people submitted through this account's flows. */
+    /**
+     * What people submitted through this account's flows.
+     *
+     * Wraps the API's `listWhatsappFlowResponses` operation.
+     */
     public suspend fun flowResponses(accountId: String): List<WhatsappFlowResponse> =
         http.callList(
             "GET",
@@ -348,7 +480,11 @@ public class WhatsappResource internal constructor(private val http: ApiClient) 
             WhatsappFlowResponse.serializer(),
         )
 
-    /** Whether a business public key is registered, and how the platform judged it. */
+    /**
+     * Whether a business public key is registered, and how the platform judged it.
+     *
+     * Wraps the API's `getWhatsappEncryptionKey` operation.
+     */
     public suspend fun encryptionKeyStatus(accountId: String): WhatsappEncryptionKeyStatus =
         http.call(
             "GET",
@@ -359,6 +495,8 @@ public class WhatsappResource internal constructor(private val http: ApiClient) 
     /**
      * Registers the public half of the key the platform encrypts a flow
      * endpoint's payloads with. The private half stays with the customer.
+     *
+     * Wraps the API's `setWhatsappEncryptionKey` operation.
      */
     public suspend fun setEncryptionKey(
         accountId: String,
@@ -373,7 +511,11 @@ public class WhatsappResource internal constructor(private val http: ApiClient) 
 
     // ─── Account state and sandbox ────────────────────────────────────────
 
-    /** The account review state and the number's quality and limit tier. */
+    /**
+     * The account review state and the number's quality and limit tier.
+     *
+     * Wraps the API's `getWhatsappAccountEvents` operation.
+     */
     public suspend fun accountEvents(accountId: String): JsonElement =
         http.call("GET", "${base(accountId)}/events", JsonElement.serializer())
 

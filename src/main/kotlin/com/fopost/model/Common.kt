@@ -15,7 +15,7 @@ public data class PageMeta(
     @SerialName("current_page") @JsonNames("currentPage", "page") val currentPage: Int? = null,
     @SerialName("per_page") @JsonNames("perPage") val perPage: Int? = null,
     val total: Int? = null,
-    @SerialName("last_page") @JsonNames("lastPage") val lastPage: Int? = null,
+    @SerialName("last_page") @JsonNames("lastPage", "total_pages", "totalPages") val lastPage: Int? = null,
     val from: Int? = null,
     val to: Int? = null,
 )

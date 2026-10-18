@@ -147,7 +147,11 @@ public class AdsResource internal constructor(private val http: ApiClient) {
     public suspend fun providers(): List<AdProvider> =
         http.callList("GET", "/ads/providers", AdProvider.serializer())
 
-    /** The network's login URL. The caller finishes the login in a browser. */
+    /**
+     * The network's login URL. The caller finishes the login in a browser.
+     *
+     * With provider `meta`, wraps the API's `authorizeMetaAds` operation.
+     */
     public suspend fun authorize(provider: String, params: MetaAuthorizeParams): String {
         val data = http.call(
             "POST",
@@ -264,6 +268,8 @@ public class AdsResource internal constructor(private val http: ApiClient) {
     /**
      * Copy the campaign and everything in it. Returns the copy's Meta id. The copy starts paused
      * unless [paused] is `false`. Needs the `publish` scope as well as `ads`.
+     *
+     * Wraps the API's `duplicateAdCampaign` operation.
      */
     public suspend fun duplicateCampaign(
         campaignId: String,
@@ -299,7 +305,11 @@ public class AdsResource internal constructor(private val http: ApiClient) {
         http.send("DELETE", "/ads/ad-sets/$adSetId", query = connection(workspaceId, connectionId))
     }
 
-    /** Returns the copy's Meta id. Needs the `publish` scope as well as `ads`. */
+    /**
+     * Returns the copy's Meta id. Needs the `publish` scope as well as `ads`.
+     *
+     * Wraps the API's `duplicateAdSet` operation.
+     */
     public suspend fun duplicateAdSet(
         adSetId: String,
         workspaceId: String,
@@ -338,7 +348,11 @@ public class AdsResource internal constructor(private val http: ApiClient) {
         http.send("DELETE", "/ads/ads/$adId", query = connection(workspaceId, connectionId))
     }
 
-    /** Returns the copy's Meta id. Needs the `publish` scope as well as `ads`. */
+    /**
+     * Returns the copy's Meta id. Needs the `publish` scope as well as `ads`.
+     *
+     * Wraps the API's `duplicateNetworkAd` operation.
+     */
     public suspend fun duplicateNetworkAd(
         adId: String,
         workspaceId: String,
@@ -1155,13 +1169,21 @@ public class AdsResource internal constructor(private val http: ApiClient) {
             query = account(workspaceId, connectionId, adAccountId),
         )
 
-    /** Holds the inventory the prediction priced. Also needs `publish`. */
+    /**
+     * Holds the inventory the prediction priced. Also needs `publish`.
+     *
+     * Wraps the API's `reserveReachFrequency` operation.
+     */
     public suspend fun reserveReachFrequency(
         predictionId: String,
         params: ReachFrequencyActionParams,
     ): ReachFrequencyPrediction = reachFrequencyAction(predictionId, "reserve", params)
 
-    /** Also needs `publish`. */
+    /**
+     * Also needs `publish`.
+     *
+     * Wraps the API's `cancelReachFrequency` operation.
+     */
     public suspend fun cancelReachFrequency(
         predictionId: String,
         params: ReachFrequencyActionParams,

@@ -29,7 +29,8 @@ public fun contentOf(vararg text: String): List<ContentBlockInput> = text.map { 
 /**
  * A post to create.
  *
- * [status] is `draft` or `scheduled`, and a scheduled post needs [scheduleAt]. To send something
+ * [status] is `draft` or `scheduled`, and a scheduled post needs [scheduleAt]. Set [schedule] to
+ * `queue` instead to drop it into the next free posting-queue slot. To send something
  * out now, create it and call `posts.publish(id)`. [accountGroupId] adds every account in that
  * group, merged with [accounts], so [accounts] may stay empty.
  */
@@ -42,6 +43,8 @@ public data class CreatePostParams(
     @SerialName("content_type") val contentType: String? = null,
     @SerialName("artifact_type") val artifactType: String? = null,
     @SerialName("schedule_at") val scheduleAt: Instant? = null,
+    /** `queue` places the post in the next free posting-queue slot. */
+    val schedule: String? = null,
     val repeatable: Boolean? = null,
     @SerialName("repeatable_times") val repeatableTimes: Int? = null,
     @SerialName("repeatable_gap") val repeatableGap: Int? = null,
@@ -75,6 +78,8 @@ public data class UpdatePostParams(
     @SerialName("content_type") val contentType: String? = null,
     @SerialName("artifact_type") val artifactType: String? = null,
     @SerialName("schedule_at") val scheduleAt: Instant? = null,
+    /** `queue` moves the post into the next free posting-queue slot. */
+    val schedule: String? = null,
     val repeatable: Boolean? = null,
     @SerialName("repeatable_times") val repeatableTimes: Int? = null,
     @SerialName("repeatable_gap") val repeatableGap: Int? = null,

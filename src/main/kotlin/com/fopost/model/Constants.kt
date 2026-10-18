@@ -64,6 +64,7 @@ public object PostStatus {
     public const val PARTIALLY_FAILED: String = "partially_failed"
     public const val FAILED: String = "failed"
     public const val CANCELLED: String = "cancelled"
+    public const val UNPUBLISHED: String = "unpublished"
 
     public val ALL: List<String> =
         listOf(DRAFT, SCHEDULED, PUBLISHING, PUBLISHED, PARTIALLY_FAILED, FAILED, CANCELLED)
@@ -84,4 +85,10 @@ public object WebhookEvents {
         POST_PUBLISHED, POST_FAILED, POST_PARTIALLY_FAILED, DELIVERY_PUBLISHED,
         DELIVERY_FAILED, DELIVERY_DELAYED, ACCOUNT_HEALTH_CHANGED, ARTICLE_PUBLISHED,
     )
+}
+
+/** Values for `schedule` on a post: how the API picks the time when none is given. */
+public object PostSchedule {
+    /** The next free posting-queue slot. */
+    public const val QUEUE: String = "queue"
 }

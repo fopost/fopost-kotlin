@@ -428,3 +428,85 @@ public data class NativePost(
     @SerialName("fetched_at") @JsonNames("fetchedAt") val fetchedAt: Instant? = null,
     val metrics: NativePostMetrics = NativePostMetrics(),
 )
+
+/** Inbox volume and response time over a period, with the previous period's deltas. */
+@Serializable
+public data class InboxAnalytics(
+    val totals: InboxAnalyticsTotals? = null,
+    /** Percentage change against the previous period of the same length. */
+    val deltas: InboxAnalyticsDeltas? = null,
+    val series: List<InboxAnalyticsPoint> = emptyList(),
+    @SerialName("by_platform") @JsonNames("byPlatform") val byPlatform: List<InboxAnalyticsPlatform> = emptyList(),
+    @SerialName("by_type") @JsonNames("byType") val byType: List<InboxAnalyticsType> = emptyList(),
+    @SerialName("by_account") @JsonNames("byAccount") val byAccount: List<InboxAnalyticsAccount> = emptyList(),
+    @SerialName("response_time") @JsonNames("responseTime") val responseTime: List<InboxAnalyticsResponseBucket> = emptyList(),
+    val heatmap: List<InboxAnalyticsHeatCell> = emptyList(),
+    @SerialName("time_zone") @JsonNames("timeZone") val timeZone: String? = null,
+)
+
+/** [medianResponseMinutes] is null when nothing was replied to. */
+@Serializable
+public data class InboxAnalyticsTotals(
+    val received: Int? = null,
+    val sent: Int? = null,
+    val answered: Int? = null,
+    val open: Int? = null,
+    val conversations: Int? = null,
+    @SerialName("median_response_minutes") @JsonNames("medianResponseMinutes") val medianResponseMinutes: Double? = null,
+)
+
+@Serializable
+public data class InboxAnalyticsDeltas(
+    val received: Double? = null,
+    val sent: Double? = null,
+    val answered: Double? = null,
+)
+
+/** One day of inbox traffic. */
+@Serializable
+public data class InboxAnalyticsPoint(
+    val date: String? = null,
+    val received: Int? = null,
+    val sent: Int? = null,
+    val answered: Int? = null,
+)
+
+@Serializable
+public data class InboxAnalyticsPlatform(
+    val platform: String? = null,
+    val received: Int? = null,
+    val sent: Int? = null,
+)
+
+/** Count per item type: comment, mention, reply, dm or review. */
+@Serializable
+public data class InboxAnalyticsType(
+    val type: String? = null,
+    val count: Int? = null,
+)
+
+@Serializable
+public data class InboxAnalyticsAccount(
+    @SerialName("account_id") @JsonNames("accountId") val accountId: String? = null,
+    val platform: String? = null,
+    val username: String? = null,
+    val name: String? = null,
+    val avatar: String? = null,
+    val received: Int? = null,
+    val sent: Int? = null,
+)
+
+/** How many first replies landed in each bucket: `under_1h`, `1h_6h`, `6h_24h`, `1d_3d`, `over_3d`. */
+@Serializable
+public data class InboxAnalyticsResponseBucket(
+    val bucket: String? = null,
+    val count: Int? = null,
+)
+
+/** Items received per weekday (0 = Sunday) and hour. */
+@Serializable
+public data class InboxAnalyticsHeatCell(
+    val weekday: Int? = null,
+    val hour: Int? = null,
+    val count: Int? = null,
+)
