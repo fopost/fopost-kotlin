@@ -233,3 +233,18 @@ public data class BulkImportCreatedPost(
     val id: String? = null,
     @SerialName("schedule_at") @JsonNames("scheduleAt") val scheduleAt: Instant? = null,
 )
+
+/** The answer to an unpublish: the post's new status and what each network did. */
+@Serializable
+public data class UnpublishResult(
+    @SerialName("post_status") @JsonNames("postStatus") val postStatus: String? = null,
+    val deliveries: List<UnpublishDelivery> = emptyList(),
+)
+
+/** One network the post was live on. [removed] is false when it refused to take the post down. */
+@Serializable
+public data class UnpublishDelivery(
+    @SerialName("account_id") @JsonNames("accountId") val accountId: String? = null,
+    val platform: String? = null,
+    val removed: Boolean? = null,
+)

@@ -379,11 +379,17 @@ public class AccountsResource internal constructor(private val http: ApiClient) 
      *
      * A 409 `webhook_connection` means the account posts through a webhook; upgrade it to the bot
      * first. The same applies to every other Discord call here.
+     *
+     * Wraps the API's `listDiscordChannels` operation.
      */
     public suspend fun listDiscordChannels(accountId: String): List<DiscordChannel> =
         http.callList("GET", discordPath(accountId, "/channels"), DiscordChannel.serializer())
 
-    /** Move the account to another channel in the same server. */
+    /**
+     * Move the account to another channel in the same server.
+     *
+     * Wraps the API's `switchDiscordChannel` operation.
+     */
     public suspend fun switchDiscordChannel(accountId: String, channelId: String): DiscordChannel =
         http.call(
             "PATCH",
@@ -392,11 +398,19 @@ public class AccountsResource internal constructor(private val http: ApiClient) 
             http.jsonBody(SwitchDiscordChannelParams(channelId), SwitchDiscordChannelParams.serializer()),
         )
 
-    /** The nickname and avatar the bot wears in the server. */
+    /**
+     * The nickname and avatar the bot wears in the server.
+     *
+     * Wraps the API's `getDiscordIdentity` operation.
+     */
     public suspend fun getDiscordIdentity(accountId: String): DiscordIdentity =
         http.call("GET", discordPath(accountId, "/identity"), DiscordIdentity.serializer())
 
-    /** Change the nickname or avatar the bot wears in the server. */
+    /**
+     * Change the nickname or avatar the bot wears in the server.
+     *
+     * Wraps the API's `updateDiscordIdentity` operation.
+     */
     public suspend fun updateDiscordIdentity(
         accountId: String,
         params: UpdateDiscordIdentityParams,
@@ -409,23 +423,43 @@ public class AccountsResource internal constructor(private val http: ApiClient) 
             http.jsonBody(buildJsonObject { params.fields.forEach { (key, value) -> put(key, value) } }),
         )
 
-    /** Pinned messages in the account's channel. */
+    /**
+     * Pinned messages in the account's channel.
+     *
+     * Wraps the API's `listDiscordPins` operation.
+     */
     public suspend fun listDiscordPins(accountId: String): List<DiscordMessage> =
         http.callList("GET", discordPath(accountId, "/messages/pinned"), DiscordMessage.serializer())
 
-    /** Remove a message from the account's channel. */
+    /**
+     * Remove a message from the account's channel.
+     *
+     * Wraps the API's `deleteDiscordMessage` operation.
+     */
     public suspend fun deleteDiscordMessage(accountId: String, messageId: String): DiscordAck =
         http.call("DELETE", discordPath(accountId, "/messages/$messageId"), DiscordAck.serializer())
 
-    /** Pin a message in the account's channel. */
+    /**
+     * Pin a message in the account's channel.
+     *
+     * Wraps the API's `pinDiscordMessage` operation.
+     */
     public suspend fun pinDiscordMessage(accountId: String, messageId: String): DiscordAck =
         http.call("POST", discordPath(accountId, "/messages/$messageId/pin"), DiscordAck.serializer())
 
-    /** Unpin a message in the account's channel. */
+    /**
+     * Unpin a message in the account's channel.
+     *
+     * Wraps the API's `unpinDiscordMessage` operation.
+     */
     public suspend fun unpinDiscordMessage(accountId: String, messageId: String): DiscordAck =
         http.call("DELETE", discordPath(accountId, "/messages/$messageId/pin"), DiscordAck.serializer())
 
-    /** Publish an announcement-channel message to every server following the channel. */
+    /**
+     * Publish an announcement-channel message to every server following the channel.
+     *
+     * Wraps the API's `crosspostDiscordMessage` operation.
+     */
     public suspend fun crosspostDiscordMessage(accountId: String, messageId: String): DiscordMessageRef =
         http.call(
             "POST",
@@ -433,7 +467,11 @@ public class AccountsResource internal constructor(private val http: ApiClient) 
             DiscordMessageRef.serializer(),
         )
 
-    /** Start a thread on a message. */
+    /**
+     * Start a thread on a message.
+     *
+     * Wraps the API's `createDiscordThread` operation.
+     */
     public suspend fun createDiscordThread(
         accountId: String,
         messageId: String,
@@ -446,7 +484,11 @@ public class AccountsResource internal constructor(private val http: ApiClient) 
             http.jsonBody(params, DiscordThreadParams.serializer()),
         )
 
-    /** Send one message to a member of the server. */
+    /**
+     * Send one message to a member of the server.
+     *
+     * Wraps the API's `sendDiscordDm` operation.
+     */
     public suspend fun sendDiscordDirectMessage(
         accountId: String,
         memberId: String,
@@ -462,15 +504,27 @@ public class AccountsResource internal constructor(private val http: ApiClient) 
             ),
         )
 
-    /** The server's scheduled events. */
+    /**
+     * The server's scheduled events.
+     *
+     * Wraps the API's `listDiscordEvents` operation.
+     */
     public suspend fun listDiscordEvents(accountId: String): List<DiscordScheduledEvent> =
         http.callList("GET", discordPath(accountId, "/events"), DiscordScheduledEvent.serializer())
 
-    /** One scheduled event. */
+    /**
+     * One scheduled event.
+     *
+     * Wraps the API's `getDiscordEvent` operation.
+     */
     public suspend fun getDiscordEvent(accountId: String, eventId: String): DiscordScheduledEvent =
         http.call("GET", discordPath(accountId, "/events/$eventId"), DiscordScheduledEvent.serializer())
 
-    /** Add an event to the server's calendar. */
+    /**
+     * Add an event to the server's calendar.
+     *
+     * Wraps the API's `createDiscordEvent` operation.
+     */
     public suspend fun createDiscordEvent(accountId: String, params: DiscordEventParams): DiscordScheduledEvent =
         http.call(
             "POST",
@@ -479,7 +533,11 @@ public class AccountsResource internal constructor(private val http: ApiClient) 
             http.jsonBody(params, DiscordEventParams.serializer()),
         )
 
-    /** Change a scheduled event; a null field is left as it is. */
+    /**
+     * Change a scheduled event; a null field is left as it is.
+     *
+     * Wraps the API's `updateDiscordEvent` operation.
+     */
     public suspend fun updateDiscordEvent(
         accountId: String,
         eventId: String,
@@ -492,11 +550,19 @@ public class AccountsResource internal constructor(private val http: ApiClient) 
             http.jsonBody(params, DiscordEventParams.serializer()),
         )
 
-    /** Remove a scheduled event. */
+    /**
+     * Remove a scheduled event.
+     *
+     * Wraps the API's `deleteDiscordEvent` operation.
+     */
     public suspend fun deleteDiscordEvent(accountId: String, eventId: String): DiscordAck =
         http.call("DELETE", discordPath(accountId, "/events/$eventId"), DiscordAck.serializer())
 
-    /** The server's roster, or the members whose name starts with [query]. */
+    /**
+     * The server's roster, or the members whose name starts with [query].
+     *
+     * Wraps the API's `listDiscordMembers` operation.
+     */
     public suspend fun listDiscordMembers(
         accountId: String,
         query: String? = null,
@@ -509,15 +575,27 @@ public class AccountsResource internal constructor(private val http: ApiClient) 
             query = mapOf("q" to query, "limit" to limit),
         )
 
-    /** One member of the server. */
+    /**
+     * One member of the server.
+     *
+     * Wraps the API's `getDiscordMember` operation.
+     */
     public suspend fun getDiscordMember(accountId: String, memberId: String): DiscordMember =
         http.call("GET", discordPath(accountId, "/members/$memberId"), DiscordMember.serializer())
 
-    /** The server's roles, highest first. */
+    /**
+     * The server's roles, highest first.
+     *
+     * Wraps the API's `listDiscordRoles` operation.
+     */
     public suspend fun listDiscordRoles(accountId: String): List<DiscordRole> =
         http.callList("GET", discordPath(accountId, "/roles"), DiscordRole.serializer())
 
-    /** Add a role to the server. */
+    /**
+     * Add a role to the server.
+     *
+     * Wraps the API's `createDiscordRole` operation.
+     */
     public suspend fun createDiscordRole(accountId: String, params: DiscordRoleParams): DiscordRole =
         http.call(
             "POST",
@@ -526,7 +604,11 @@ public class AccountsResource internal constructor(private val http: ApiClient) 
             http.jsonBody(params, DiscordRoleParams.serializer()),
         )
 
-    /** Change a role on the server; a null field is left as it is. */
+    /**
+     * Change a role on the server; a null field is left as it is.
+     *
+     * Wraps the API's `updateDiscordRole` operation.
+     */
     public suspend fun updateDiscordRole(
         accountId: String,
         roleId: String,
@@ -539,7 +621,11 @@ public class AccountsResource internal constructor(private val http: ApiClient) 
             http.jsonBody(params, DiscordRoleParams.serializer()),
         )
 
-    /** Remove a role from the server. */
+    /**
+     * Remove a role from the server.
+     *
+     * Wraps the API's `deleteDiscordRole` operation.
+     */
     public suspend fun deleteDiscordRole(accountId: String, roleId: String): DiscordAck =
         http.call("DELETE", discordPath(accountId, "/roles/$roleId"), DiscordAck.serializer())
 

@@ -60,12 +60,14 @@ internal class ApiClient(
         path: String,
         body: RequestBody? = null,
         query: Map<String, Any?>? = null,
+        headers: Map<String, String>? = null,
     ): JsonElement {
         val request = Request.Builder()
             .url(url(path, query))
             .header("Accept", "application/json")
             .header("X-API-Key", apiKey)
             .header("User-Agent", userAgent)
+            .apply { headers?.forEach { (name, value) -> header(name, value) } }
             .method(method, body ?: emptyBodyFor(method))
             .build()
 
@@ -117,8 +119,9 @@ internal class ApiClient(
         body: RequestBody? = null,
         query: Map<String, Any?>? = null,
         unwrap: Boolean = true,
+        headers: Map<String, String>? = null,
     ): T {
-        val element = send(method, path, body, query)
+        val element = send(method, path, body, query, headers)
         val payload = if (unwrap) unwrapEnvelope(element) else element
         return decode(deserializer, payload)
     }
@@ -144,6 +147,30 @@ internal class ApiClient(
             ?: emptyList()
         val meta = (element["meta"] as? JsonObject)?.let { decode(PageMeta.serializer(), it) }
         return Page(items, meta)
+    }
+
+    /** An authenticated GET whose answer is a file, not JSON. No envelope, no retry. */
+    suspend fun getBytes(path: String, query: Map<String, Any?>? = null): ByteArray {
+        val request = Request.Builder()
+            .url(url(path, query))
+            .header("X-API-Key", apiKey)
+            .header("User-Agent", userAgent)
+            .get()
+            .build()
+        val response = try {
+            http.newCall(request).await()
+        } catch (e: IOException) {
+            throw TransportException("fopost: GET $path failed: ${e.message}", e)
+        }
+        response.use {
+            val body = try {
+                it.body?.bytes() ?: ByteArray(0)
+            } catch (e: IOException) {
+                throw TransportException("fopost: reading the response to GET $path failed", e)
+            }
+            if (it.code in 200..299) return body
+            throw errorFor(it.code, body.toString(Charsets.UTF_8), rateLimitOf(it), retryAfterOf(it))
+        }
     }
 
     /** A raw PUT to a presigned URL: no API key, no envelope, no retry. */

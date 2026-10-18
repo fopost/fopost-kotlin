@@ -216,6 +216,19 @@ public class InboxResource internal constructor(private val http: ApiClient) {
      * Show the typing indicator in a DM conversation, or clear it with [on] set to false. Needs
      * the `publish` scope. Returns whether the indicator is now on.
      */
+    /** Remove a conversation and its messages from the inbox. It stays on the network. */
+    public suspend fun deleteConversation(conversationId: String, accountId: String) {
+        http.send("DELETE", "/inbox/conversations/$conversationId", query = mapOf("account_id" to accountId))
+    }
+
+    /**
+     * The bytes of an item's attachment, by its position in [com.fopost.model.InboxItem.attachments].
+     *
+     * [variant] is `full` (the default) or `preview`.
+     */
+    public suspend fun attachment(itemId: String, index: Int, variant: String? = null): ByteArray =
+        http.getBytes("/inbox/$itemId/attachments/$index", query = mapOf("variant" to variant))
+
     public suspend fun setTyping(conversationId: String, accountId: String, on: Boolean? = null): Boolean {
         val data = http.call(
             "POST",

@@ -3,6 +3,7 @@ package com.fopost.param
 import com.fopost.internal.InstantSerializer
 import com.fopost.model.AdBudget
 import com.fopost.model.AdTargeting
+import com.fopost.model.CustomConversionRule
 import java.time.Instant
 import kotlinx.serialization.Serializable
 
@@ -152,6 +153,7 @@ public data class CreateAdCampaignParams(
 /** One offline conversion. Identifiers are hashed before anything leaves FoPost. */
 @Serializable
 public data class ConversionEvent(
+    /** A standard event such as `Purchase`, or a custom one. */
     val eventName: String,
     /** ISO 8601. */
     val occurredAt: String,
@@ -161,6 +163,23 @@ public data class ConversionEvent(
     val valueMinor: Long? = null,
     val currency: String? = null,
     val orderId: String? = null,
+    /** Your own id for the event, so the network deduplicates a browser and server pair. */
+    val eventId: String? = null,
+    /** One of [com.fopost.model.ConversionActionSources]; `website` when omitted. */
+    val actionSource: String? = null,
+    /** The page the event fired on. */
+    val sourceUrl: String? = null,
+    /** Your own user id. Hashed before it leaves FoPost; never stored. */
+    val externalId: String? = null,
+    /** Sent as-is for matching; never stored. */
+    val clientIpAddress: String? = null,
+    /** Sent as-is; never stored. */
+    val clientUserAgent: String? = null,
+    /** The network's click id (`fbc`). */
+    val clickId: String? = null,
+    /** The network's browser id (`fbp`). */
+    val browserId: String? = null,
+    val contentIds: List<String>? = null,
 )
 
 /** Offline conversions against a pixel the ad account owns. */
@@ -173,6 +192,70 @@ public data class UploadConversionsParams(
     val pixelId: String,
     /** Up to 1000 per call. */
     val events: List<ConversionEvent>,
+)
+
+/** Add a pixel to an ad account. */
+@Serializable
+public data class CreatePixelParams(
+    val workspaceId: String,
+    val connectionId: String,
+    val adAccountId: String,
+    val name: String,
+)
+
+/** Rename a pixel or change what its data may be used for. */
+@Serializable
+public data class UpdatePixelParams(
+    val workspaceId: String,
+    val connectionId: String,
+    val adAccountId: String,
+    val name: String? = null,
+    /** One of [com.fopost.model.PixelDataUseSettings]. */
+    val dataUseSetting: String? = null,
+)
+
+/** Share a pixel with another ad account under the same business portfolio. */
+@Serializable
+public data class SharePixelParams(
+    val workspaceId: String,
+    val connectionId: String,
+    val adAccountId: String,
+    val targetAdAccountId: String,
+)
+
+/** Define a custom conversion on a pixel. */
+@Serializable
+public data class CreateCustomConversionParams(
+    val workspaceId: String,
+    val connectionId: String,
+    val adAccountId: String,
+    val pixelId: String,
+    val name: String,
+    /** One of [com.fopost.model.CustomConversionEventTypes]. */
+    val eventType: String,
+    val rule: CustomConversionRule,
+    val description: String? = null,
+    /** Default value of one conversion, account currency, minor units. */
+    val defaultValueMinor: Long? = null,
+)
+
+/** Rename, describe or revalue a custom conversion. */
+@Serializable
+public data class UpdateCustomConversionParams(
+    val workspaceId: String,
+    val connectionId: String,
+    val adAccountId: String,
+    val name: String? = null,
+    val description: String? = null,
+    val defaultValueMinor: Long? = null,
+)
+
+/** The scope alone, for a custom conversion delete that carries it in the body. */
+@Serializable
+public data class DeleteCustomConversionParams(
+    val workspaceId: String,
+    val connectionId: String,
+    val adAccountId: String,
 )
 
 /** Scopes a comment write; the comment id travels in the path. */
