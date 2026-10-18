@@ -39,6 +39,7 @@ public class BlogsResource internal constructor(private val http: ApiClient) {
             query = mapOf("limit" to limit, "status" to status, "q" to q),
         )
 
+    /** Wraps the API's `getBlogArticle` operation. */
     public suspend fun getArticle(accountId: String, blogId: String, articleId: String): RemoteArticle =
         http.call("GET", "${articles(accountId, blogId)}/$articleId", RemoteArticle.serializer())
 
@@ -60,6 +61,8 @@ public class BlogsResource internal constructor(private val http: ApiClient) {
      *
      * The article is addressed by its own id and only the fields set on
      * [params] are sent, so an edit never creates a second post on the site.
+     *
+     * Wraps the API's `updateBlogArticle` operation.
      */
     public suspend fun updateArticle(
         accountId: String,
@@ -74,7 +77,11 @@ public class BlogsResource internal constructor(private val http: ApiClient) {
             http.jsonBody(params, ArticleParams.serializer()),
         )
 
-    /** Removes the article from the site. Needs `publish`; cannot be undone. */
+    /**
+     * Removes the article from the site. Needs `publish`; cannot be undone.
+     *
+     * Wraps the API's `deleteBlogArticle` operation.
+     */
     public suspend fun deleteArticle(accountId: String, blogId: String, articleId: String) {
         http.send("DELETE", "${articles(accountId, blogId)}/$articleId")
     }
