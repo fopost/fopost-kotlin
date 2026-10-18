@@ -149,6 +149,26 @@ public class InboxResource internal constructor(private val http: ApiClient) {
         http.call("POST", "/inbox/$itemId/unlike", InboxItem.serializer())
 
     /**
+     * Repost the item to the account's own timeline. X only, where [InboxItem.canRepost] is
+     * true; needs the `publish` scope. Each call is an X API call metered to the workspace.
+     */
+    public suspend fun repost(itemId: String): InboxItem =
+        http.call("POST", "/inbox/$itemId/repost", InboxItem.serializer())
+
+    public suspend fun unrepost(itemId: String): InboxItem =
+        http.call("POST", "/inbox/$itemId/unrepost", InboxItem.serializer())
+
+    /**
+     * Bookmark the item on the account. X only, where [InboxItem.canBookmark] is true; needs
+     * the `publish` scope. Each call is an X API call metered to the workspace.
+     */
+    public suspend fun bookmark(itemId: String): InboxItem =
+        http.call("POST", "/inbox/$itemId/bookmark", InboxItem.serializer())
+
+    public suspend fun unbookmark(itemId: String): InboxItem =
+        http.call("POST", "/inbox/$itemId/unbookmark", InboxItem.serializer())
+
+    /**
      * Vote the item up or down where the network ranks by votes (Reddit), or take an earlier vote
      * back with `none`.
      *
