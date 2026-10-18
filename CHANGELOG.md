@@ -4,6 +4,29 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- **Breaking:** `ads.uploadConversions` answers a `ConversionUploadResult` (`id`, `accepted`,
+  `eventCount`, `replayed`) instead of the accepted count alone, and takes an optional
+  `idempotencyKey` sent as the `Idempotency-Key` header.
+- `ConversionEvent` gained `eventId`, `actionSource` (`ConversionActionSources`), `sourceUrl`,
+  `externalId`, `clientIpAddress`, `clientUserAgent`, `clickId`, `browserId` and `contentIds`.
+
+### Added
+
+- `ads.sendPixelConversions(params, idempotencyKey)`: the Conversions API send with a required
+  `Idempotency-Key`; a replay answers `replayed = true` and sends nothing. `ads.conversionBatches`
+  lists the stored batches as `ConversionBatch`, identifiers hashed.
+- Pixels: `ads.pixels`, `createPixel`, `pixel`, `updatePixel`, `sharePixel`, `pixelStats` and
+  `eventMatchQuality`, with `AdPixel`, `AdPixelDetail`, `AdPixelStats`, `EventMatchQuality` and
+  `PixelDataUseSettings`.
+- Custom conversions: `ads.customConversions`, `createCustomConversion`, `customConversion`,
+  `updateCustomConversion` and `deleteCustomConversion`, with `CustomConversion`,
+  `CustomConversionRule` and `CustomConversionEventTypes`.
+- All of these need the `ads` scope only.
+
 ## [0.3.0] - 2026-10-18
 
 ### Removed
