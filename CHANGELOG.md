@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- `inbox.repost`, `unrepost`, `bookmark` and `unbookmark` for X items, with `reposted`,
+  `bookmarked`, `canRepost` and `canBookmark` on `InboxItem`.
+- `accounts.followXUser(accountId, userId)` and `unfollowXUser`, answering an `XFollowResult`.
+- `accounts.getXPost(postId, accountId)` and `accounts.searchXPosts(XSearchParams)`, pass-through
+  reads of one X post and of recent X posts as `XPost`, paged by `XSearchPage.nextToken`.
+- Every X engagement call is metered to the workspace; a spent X balance answers a
+  `402 platform_balance_spent`, and an X account connected before this release answers
+  `409 reconnect_required` for repost, bookmark and follow until it is reconnected.
+
 ## [0.3.0] - 2026-10-18
 
 ### Removed
