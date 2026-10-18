@@ -174,7 +174,7 @@ client.posts.listAll(PostListParams(workspaceId = workspaceId))
 | `inbox`       | `list`, `threads`, `conversations`, `unreadCount`, `accounts`, `platforms`, `markThreadRead`, `refresh`, `update`, `editComment`, `reply`, `hide`, `unhide`, `delete`, `like`, `unlike`, `pin`, `unpin`, `react`, `startConversation`, `setTyping`, `listApprovals`, `approveReply`, `rejectReply` |
 | `ads`         | `list`, `external`, `boostable`, `connections`, `sources`, `providers`, `authorize`, `deleteConnection`, `boost`, `create`, `refresh`, `setStatus`, `delete`, `accountTree`, `createCampaign`, `campaign`, `updateCampaign`, `deleteCampaign`, `duplicateCampaign`, `createAdSet`, `adSet`, `updateAdSet`, `deleteAdSet`, `duplicateAdSet`, `createNetworkAd`, `networkAd`, `updateNetworkAd`, `deleteNetworkAd`, `duplicateNetworkAd`, `bulkSetStatus`, `creatives`, `createCreative`, `creative`, `deleteCreative`, `estimateReach`, `insights`, `adInsights`, `audiences`, `createAudience`, `audience`, `updateAudience`, `deleteAudience`, `addAudienceUsers`, `addAudienceCompanies`, `searchTargeting`, `leadForms`, `createLeadForm`, `leadForm`, `archiveLeadForm`, `leads`, `leadsFeed`, `leadPages`, `subscribeLeadPage`, `unsubscribeLeadPage`, `bidPricing`, `supplyForecast`, `conversionRules`, `createConversionRule`, `conversionRule`, `updateConversionRule`, `deleteConversionRule`, `attachConversionRule`, `detachConversionRule`, `conversionMetrics`, `sendConversionEvents` |
 | `googleBusiness` | `getLocation`, `updateLocation`, `getAttributes`, `updateAttributes`, `getMenus`, `replaceMenus`, `getServices`, `replaceServices`, `listMedia`, `addMedia`, `deleteMedia`, `listPlaceActions`, `createPlaceAction`, `updatePlaceAction`, `deletePlaceAction`, `getVerificationOptions`, `startVerification`, `completeVerification`, `getPerformance`, `getSearchKeywords`, `assign` |
-| `blog`        | `getSettings`, `updateSettings`, `rotateWebsiteSecret`, `testWebsite`, `listKeywords`, `planKeywords`, `addKeyword`, `updateKeyword`, `deleteKeyword`, `listArticles`, `requestArticle`, `getArticle`, `updateArticle`, `regenerateArticle`, `publishArticle`, `rejectArticle`, `deleteArticle` |
+| `blog`        | `getSettings`, `updateSettings`, `rotateWebsiteSecret`, `testWebsite`, `listKeywords`, `suggestSeeds`, `planKeywords`, `addKeyword`, `updateKeyword`, `deleteKeyword`, `listArticles`, `requestArticle`, `getArticle`, `updateArticle`, `regenerateArticle`, `submitArticle`, `publishArticle`, `rejectArticle`, `deleteArticle` |
 | `whatsapp`    | `profile`, `updateProfile`, `requestDisplayName`, `setUsername`, `templates`, `templateLibrary`, `template`, `createTemplate`, `importTemplate`, `updateTemplate`, `deleteTemplate`, `groups`, `createGroup`, `group`, `updateGroup`, `deleteGroup`, `groupInviteLink`, `resetGroupInviteLink`, `removeGroupParticipants`, `blocked`, `blockUsers`, `unblockUsers`, `commerceSettings`, `updateCommerceSettings`, `linkCatalog`, `flows`, `flow`, `createFlow`, `updateFlow`, `deleteFlow`, `uploadFlowJson`, `publishFlow`, `deprecateFlow`, `flowResponses`, `encryptionKeyStatus`, `setEncryptionKey`, `accountEvents`, `sandboxSessions`, `createSandboxSession` |
 | `validate`    | `post`, `length`, `media`                                                                                                                                                                                                                                        |
 | `activity`    | `list`                                                                                                                                                                                                                                                           |
@@ -448,11 +448,19 @@ val article = client.blog.requestArticle(
 
 // Written in the background: poll until it leaves `queued` and `writing`.
 val draft = client.blog.getArticle(workspaceId, article.id!!)
+client.blog.submitArticle(workspaceId, draft.id!!)
 client.blog.publishArticle(workspaceId, draft.id!!)
 ```
 
-`planKeywords`, `requestArticle` and `regenerateArticle` spend AI credits and answer `402` when the
-balance ran out; `publishArticle` answers `409` with `no_target` until the settings name a target.
+Planning starts from the blog `goal` and topics: `suggestSeeds` proposes search terms to edit,
+`planKeywords` researches them into `suggested` keywords (follow the run on `planRun` in the
+settings), and setting a keyword to `planned` picks it onto the next free date. A written article
+stops at `draft`; `submitArticle` moves it to `in_review`, and only then can it be published or given
+a `publishAt`.
+
+`suggestSeeds`, `planKeywords`, `requestArticle` and `regenerateArticle` spend AI credits and answer
+`402` when the balance ran out; `publishArticle` answers `409` for a draft that was not submitted, and
+`409` with `no_target` until the settings name a target.
 Setting `websiteUrl` through `updateSettings` returns the website secret once, on that call only.
 
 ## Scopes

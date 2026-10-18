@@ -12,13 +12,18 @@ public data class UpdateBlogSettingsParams(
     val siteUrl: String? = null,
     val topic: String? = null,
     val audience: String? = null,
+    /** One of [com.fopost.model.BlogGoal]. */
+    val goal: String? = null,
+    /** What the blog wants to write about. */
+    val focusTopics: String? = null,
+    /** What the blog never writes about. */
+    val avoidTopics: String? = null,
     val language: String? = null,
     val locationCode: Int? = null,
     /** 0 to 7; 0 turns planning off. */
     val cadencePerWeek: Int? = null,
-    /** 0 to 14. */
+    /** 0 to 14 days before its planned date that a picked keyword starts being written. */
     val reviewHoldDays: Int? = null,
-    val autoPublish: Boolean? = null,
     /** `draft`, `standard` or `best`. */
     val imageTier: String? = null,
     /** 0 to 3. */
@@ -45,6 +50,15 @@ public data class BlogKeywordListParams(
     )
 }
 
+/** The body of `blog.suggestSeeds`. Pass the current [seeds] to refine them and [prompt] to steer. */
+@Serializable
+public data class SuggestBlogSeedsParams(
+    /** Up to 20 terms. */
+    val seeds: List<String>? = null,
+    /** Up to 500 characters. */
+    val prompt: String? = null,
+)
+
 /** The body of `blog.planKeywords`. Unset seeds let the plan start from the settings' topic. */
 @Serializable
 public data class PlanBlogKeywordsParams(
@@ -61,7 +75,7 @@ public data class CreateBlogKeywordParams(
 /** The body of `blog.updateKeyword`. Only what is set is sent. */
 @Serializable
 public data class UpdateBlogKeywordParams(
-    /** One of [com.fopost.model.BlogKeywordStatus]. */
+    /** One of [com.fopost.model.BlogKeywordStatus]; `planned` picks it onto the next free date. */
     val status: String? = null,
     /** A calendar date, `YYYY-MM-DD`. */
     val plannedFor: String? = null,
@@ -101,6 +115,6 @@ public data class UpdateBlogArticleParams(
     val metaDescription: String? = null,
     val bodyMarkdown: String? = null,
     val tags: List<String>? = null,
-    /** ISO 8601. Puts the draft on the calendar. */
+    /** ISO 8601. Puts the article on the calendar; it must be in review (or scheduled or failed). */
     val publishAt: String? = null,
 )
