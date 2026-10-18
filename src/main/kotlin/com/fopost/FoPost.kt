@@ -12,6 +12,7 @@ import com.fopost.resource.AnalyticsResource
 import com.fopost.resource.AutomationsResource
 import com.fopost.resource.BlogResource
 import com.fopost.resource.CommunitiesResource
+import com.fopost.resource.ConnectSessionsResource
 import com.fopost.resource.BroadcastsResource
 import com.fopost.resource.ContactsResource
 import com.fopost.resource.GoogleAdsResource
@@ -19,8 +20,10 @@ import com.fopost.resource.GoogleBusinessResource
 import com.fopost.resource.InboxResource
 import com.fopost.resource.KnowledgeResource
 import com.fopost.resource.LabelsResource
+import com.fopost.resource.LogsResource
 import com.fopost.resource.MediaResource
 import com.fopost.resource.PostsResource
+import com.fopost.resource.QueueResource
 import com.fopost.resource.SequencesResource
 import com.fopost.resource.ValidateResource
 import com.fopost.resource.WhatsappResource
@@ -116,14 +119,23 @@ public class FoPost @JvmOverloads constructor(
 
     public val media: MediaResource = MediaResource(api)
     public val posts: PostsResource = PostsResource(api, media)
+
+    /** The posting queue: weekly slots a post created with `schedule = "queue"` lands in. */
+    public val queue: QueueResource = QueueResource(api)
     public val workspaces: WorkspacesResource = WorkspacesResource(api)
     public val accounts: AccountsResource = AccountsResource(api)
     public val accountGroups: AccountGroupsResource = AccountGroupsResource(api)
+
+    /** Hosted connect links for your own users. */
+    public val connectSessions: ConnectSessionsResource = ConnectSessionsResource(api)
     public val communities: CommunitiesResource = CommunitiesResource(api)
     public val labels: LabelsResource = LabelsResource(api)
 
     /** What happened in a workspace, and the security audit log. */
     public val activity: ActivityResource = ActivityResource(api)
+
+    /** Every API request made with your keys. */
+    public val logs: LogsResource = LogsResource(api)
     public val webhooks: WebhooksResource = WebhooksResource(api)
     public val analytics: AnalyticsResource = AnalyticsResource(api)
     public val automations: AutomationsResource = AutomationsResource(api)

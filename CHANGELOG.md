@@ -27,6 +27,34 @@ All notable changes to this project are documented here. The format follows
   `CustomConversionRule` and `CustomConversionEventTypes`.
 - All of these need the `ads` scope only.
 
+## [0.4.0] - 2026-10-18
+
+### Added
+
+- `queue`: the posting queue. `queue.slots(workspaceId)`, `createSlot`, `updateSlot`, `deleteSlot`,
+  `next` and `preview` as `QueueSlot`, `QueueSlotDeleted` and `QueueNext`, with
+  `CreateQueueSlotParams` and `UpdateQueueSlotParams`. `CreatePostParams` and `UpdatePostParams`
+  take `schedule = PostSchedule.QUEUE` to drop a post into the next free slot.
+- `posts.unpublish(postId)`: takes a live post down from every network, answering
+  `UnpublishResult` with what each one did. `PostStatus.UNPUBLISHED` is new.
+- `connectSessions`: hosted connect links. `connectSessions.create(params)` and `get(id)` as
+  `ConnectSession`, with `CreateConnectSessionParams` and `ConnectSessionBrandingParams`.
+- `webhooks.deliveries(webhookId, status, limit)`, `delivery(webhookId, deliveryId)` and
+  `redeliver(webhookId, deliveryId)` as `WebhookDelivery`.
+- `automations.versions(automationId, page, perPage)`, `version(automationId, version)` and
+  `restoreVersion(automationId, version)` as `AutomationVersion`, `AutomationVersionRestore` and
+  the `WorkflowGraph` node and edge types. `AutomationStep.nodeId` is new, and `PageMeta.lastPage`
+  also reads `total_pages`.
+- `logs.list(params)`: the API request log as `RequestLogPage`, with `LogListParams` filters and
+  the period's `RequestLogSummary`.
+- `analytics.inbox(params)`: inbox volume, response times and the busiest hours as
+  `InboxAnalytics`, scoped by `InboxAnalyticsParams`.
+- `inbox.deleteConversation(conversationId, accountId)` and
+  `inbox.attachment(itemId, index, variant)`, which downloads the attachment bytes.
+- Every method that builds its path from fragments now names the API operation it wraps in its
+  KDoc: WhatsApp, Google Business Profile, Discord, remote blog articles, and the ad duplicate,
+  reach-and-frequency and Meta authorize calls.
+
 ## [0.3.0] - 2026-10-18
 
 ### Removed

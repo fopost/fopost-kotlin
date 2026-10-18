@@ -37,6 +37,7 @@ public data class Automation(
 public data class AutomationStep(
     val id: Int? = null,
     val position: Int? = null,
+    @SerialName("node_id") @JsonNames("nodeId") val nodeId: String? = null,
     @SerialName("action_type") @JsonNames("actionType") val actionType: String? = null,
     @SerialName("action_config") @JsonNames("actionConfig") val actionConfig: JsonObject? = null,
 )
@@ -95,4 +96,78 @@ public data class AutomationRecentRun(
 public data class AutomationTrigger(
     @SerialName("run_id") @JsonNames("runId") val runId: Long? = null,
     val triggered: Boolean? = null,
+)
+
+/**
+ * One saved version of an automation's graph.
+ *
+ * The list gives [nodeCount] and the nodes that changed against the previous version; the
+ * single-version call fills [graph] instead.
+ */
+@Serializable
+public data class AutomationVersion(
+    val version: Int? = null,
+    val note: String? = null,
+    @SerialName("created_by") @JsonNames("createdBy") val createdBy: AutomationVersionAuthor? = null,
+    @SerialName("created_at") @JsonNames("createdAt") val createdAt: Instant? = null,
+    @SerialName("node_count") @JsonNames("nodeCount") val nodeCount: Int? = null,
+    @SerialName("nodes_added") @JsonNames("nodesAdded") val nodesAdded: List<AutomationVersionNodeRef> = emptyList(),
+    @SerialName("nodes_removed") @JsonNames("nodesRemoved") val nodesRemoved: List<AutomationVersionNodeRef> = emptyList(),
+    val graph: WorkflowGraph? = null,
+)
+
+/** Who saved a version. */
+@Serializable
+public data class AutomationVersionAuthor(
+    val name: String? = null,
+)
+
+/** A node named in a version's diff. */
+@Serializable
+public data class AutomationVersionNodeRef(
+    val id: String? = null,
+    val kind: String? = null,
+    val label: String? = null,
+)
+
+/** The answer to a restore: the new version number, its graph, and the steps compiled from it. */
+@Serializable
+public data class AutomationVersionRestore(
+    val version: Int? = null,
+    val graph: WorkflowGraph? = null,
+    val steps: List<AutomationStep> = emptyList(),
+)
+
+/** An automation's canvas: its nodes and the edges between them. */
+@Serializable
+public data class WorkflowGraph(
+    val nodes: List<WorkflowNode> = emptyList(),
+    val edges: List<WorkflowEdge> = emptyList(),
+)
+
+/** One node on the canvas. [config] is echoed back exactly as authored. */
+@Serializable
+public data class WorkflowNode(
+    val id: String? = null,
+    val kind: String? = null,
+    val label: String? = null,
+    val config: JsonObject? = null,
+    val position: Int? = null,
+    val layout: WorkflowLayout? = null,
+)
+
+/** Where a node sits on the canvas. */
+@Serializable
+public data class WorkflowLayout(
+    val x: Double? = null,
+    val y: Double? = null,
+)
+
+/** A connection from one node's handle to another node. */
+@Serializable
+public data class WorkflowEdge(
+    val id: String? = null,
+    val source: String? = null,
+    @SerialName("source_handle") @JsonNames("sourceHandle") val sourceHandle: String? = null,
+    val target: String? = null,
 )

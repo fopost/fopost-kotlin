@@ -149,6 +149,30 @@ internal class ApiClient(
         return Page(items, meta)
     }
 
+    /** An authenticated GET whose answer is a file, not JSON. No envelope, no retry. */
+    suspend fun getBytes(path: String, query: Map<String, Any?>? = null): ByteArray {
+        val request = Request.Builder()
+            .url(url(path, query))
+            .header("X-API-Key", apiKey)
+            .header("User-Agent", userAgent)
+            .get()
+            .build()
+        val response = try {
+            http.newCall(request).await()
+        } catch (e: IOException) {
+            throw TransportException("fopost: GET $path failed: ${e.message}", e)
+        }
+        response.use {
+            val body = try {
+                it.body?.bytes() ?: ByteArray(0)
+            } catch (e: IOException) {
+                throw TransportException("fopost: reading the response to GET $path failed", e)
+            }
+            if (it.code in 200..299) return body
+            throw errorFor(it.code, body.toString(Charsets.UTF_8), rateLimitOf(it), retryAfterOf(it))
+        }
+    }
+
     /** A raw PUT to a presigned URL: no API key, no envelope, no retry. */
     suspend fun putRaw(url: String, headers: Map<String, String>, content: RequestBody) {
         val request = Request.Builder()

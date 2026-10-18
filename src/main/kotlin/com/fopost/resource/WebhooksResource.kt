@@ -2,6 +2,7 @@ package com.fopost.resource
 
 import com.fopost.internal.ApiClient
 import com.fopost.model.Webhook
+import com.fopost.model.WebhookDelivery
 import com.fopost.param.CreateWebhookParams
 import com.fopost.param.UpdateWebhookParams
 
@@ -39,5 +40,23 @@ public class WebhooksResource internal constructor(private val http: ApiClient) 
     /** Send a sample event to the endpoint, to check it is reachable and verifies the signature. */
     public suspend fun test(webhookId: String) {
         http.send("POST", "/webhooks/$webhookId/test")
+    }
+
+    /** Recent attempts, newest first. [status] narrows to `success` or `failed`. */
+    public suspend fun deliveries(webhookId: String, status: String? = null, limit: Int? = null): List<WebhookDelivery> =
+        http.callList(
+            "GET",
+            "/webhooks/$webhookId/deliveries",
+            WebhookDelivery.serializer(),
+            query = mapOf("status" to status, "limit" to limit),
+        )
+
+    /** One attempt, with the body exactly as it was sent. */
+    public suspend fun delivery(webhookId: String, deliveryId: String): WebhookDelivery =
+        http.call("GET", "/webhooks/$webhookId/deliveries/$deliveryId", WebhookDelivery.serializer())
+
+    /** Send the same body again, as a new attempt under the same delivery key. */
+    public suspend fun redeliver(webhookId: String, deliveryId: String) {
+        http.send("POST", "/webhooks/$webhookId/deliveries/$deliveryId/redeliver")
     }
 }

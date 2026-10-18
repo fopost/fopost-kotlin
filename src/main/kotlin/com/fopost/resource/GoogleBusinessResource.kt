@@ -34,7 +34,11 @@ public class GoogleBusinessResource internal constructor(private val http: ApiCl
         )
     }
 
-    /** The connected location, in the Business Information shape. */
+    /**
+     * The connected location, in the Business Information shape.
+     *
+     * Wraps the API's `getGoogleBusinessLocation` operation.
+     */
     public suspend fun getLocation(accountId: String): JsonElement =
         read("GET", path(accountId, "/location"))
 
@@ -43,6 +47,8 @@ public class GoogleBusinessResource internal constructor(private val http: ApiCl
      * clears that field. Keys are the API's own snake_case names: `title`,
      * `description`, `website_uri`, `primary_phone`, `additional_phones`,
      * `store_code` and `regular_hours`.
+     *
+     * Wraps the API's `updateGoogleBusinessLocation` operation.
      */
     public suspend fun updateLocation(accountId: String, fields: JsonObject): JsonElement =
         read("PATCH", path(accountId, "/location"), body = fields)
@@ -50,6 +56,8 @@ public class GoogleBusinessResource internal constructor(private val http: ApiCl
     /**
      * The attribute values set on the location, or, with [available], the
      * attributes Google offers for its category and region.
+     *
+     * Wraps the API's `getGoogleBusinessAttributes` operation.
      */
     public suspend fun getAttributes(
         accountId: String,
@@ -68,7 +76,11 @@ public class GoogleBusinessResource internal constructor(private val http: ApiCl
         ),
     )
 
-    /** Only the named attributes change; every other one is left alone. */
+    /**
+     * Only the named attributes change; every other one is left alone.
+     *
+     * Wraps the API's `updateGoogleBusinessAttributes` operation.
+     */
     public suspend fun updateAttributes(accountId: String, attributes: List<JsonElement>): JsonElement =
         read(
             "PATCH",
@@ -76,10 +88,18 @@ public class GoogleBusinessResource internal constructor(private val http: ApiCl
             body = buildJsonObject { putJsonArray("attributes") { attributes.forEach { add(it) } } },
         )
 
-    /** The location's food menus. */
+    /**
+     * The location's food menus.
+     *
+     * Wraps the API's `getGoogleBusinessMenus` operation.
+     */
     public suspend fun getMenus(accountId: String): JsonElement = read("GET", path(accountId, "/menus"))
 
-    /** Google has no per-section patch, so the whole menu set is replaced. */
+    /**
+     * Google has no per-section patch, so the whole menu set is replaced.
+     *
+     * Wraps the API's `replaceGoogleBusinessMenus` operation.
+     */
     public suspend fun replaceMenus(accountId: String, menus: List<JsonElement>): JsonElement =
         read(
             "PUT",
@@ -87,10 +107,18 @@ public class GoogleBusinessResource internal constructor(private val http: ApiCl
             body = buildJsonObject { putJsonArray("menus") { menus.forEach { add(it) } } },
         )
 
-    /** The location's service list. */
+    /**
+     * The location's service list.
+     *
+     * Wraps the API's `getGoogleBusinessServices` operation.
+     */
     public suspend fun getServices(accountId: String): JsonElement = read("GET", path(accountId, "/services"))
 
-    /** Replace the whole service list. */
+    /**
+     * Replace the whole service list.
+     *
+     * Wraps the API's `replaceGoogleBusinessServices` operation.
+     */
     public suspend fun replaceServices(accountId: String, serviceItems: List<JsonElement>): JsonElement =
         read(
             "PUT",
@@ -98,7 +126,11 @@ public class GoogleBusinessResource internal constructor(private val http: ApiCl
             body = buildJsonObject { putJsonArray("service_items") { serviceItems.forEach { add(it) } } },
         )
 
-    /** The photos on the location. */
+    /**
+     * The photos on the location.
+     *
+     * Wraps the API's `listGoogleBusinessMedia` operation.
+     */
     public suspend fun listMedia(
         accountId: String,
         pageSize: Int? = null,
@@ -112,6 +144,8 @@ public class GoogleBusinessResource internal constructor(private val http: ApiCl
     /**
      * Add a photo from the media library. The asset has to be in a workspace the
      * caller can reach, and JPEG or PNG.
+     *
+     * Wraps the API's `addGoogleBusinessMedia` operation.
      */
     public suspend fun addMedia(
         accountId: String,
@@ -128,15 +162,27 @@ public class GoogleBusinessResource internal constructor(private val http: ApiCl
         },
     )
 
-    /** Remove a photo by the media key Google returned. */
+    /**
+     * Remove a photo by the media key Google returned.
+     *
+     * Wraps the API's `deleteGoogleBusinessMedia` operation.
+     */
     public suspend fun deleteMedia(accountId: String, mediaKey: String): JsonElement =
         read("DELETE", path(accountId, "/media/$mediaKey"))
 
-    /** The Book, Order and Reserve links on the listing. */
+    /**
+     * The Book, Order and Reserve links on the listing.
+     *
+     * Wraps the API's `listGoogleBusinessPlaceActions` operation.
+     */
     public suspend fun listPlaceActions(accountId: String): JsonElement =
         read("GET", path(accountId, "/place-actions"))
 
-    /** Add an action link to the listing. */
+    /**
+     * Add an action link to the listing.
+     *
+     * Wraps the API's `createGoogleBusinessPlaceAction` operation.
+     */
     public suspend fun createPlaceAction(
         accountId: String,
         uri: String,
@@ -152,7 +198,11 @@ public class GoogleBusinessResource internal constructor(private val http: ApiCl
         },
     )
 
-    /** Patch one action link; a null argument is left alone. */
+    /**
+     * Patch one action link; a null argument is left alone.
+     *
+     * Wraps the API's `updateGoogleBusinessPlaceAction` operation.
+     */
     public suspend fun updatePlaceAction(
         accountId: String,
         linkId: String,
@@ -167,11 +217,19 @@ public class GoogleBusinessResource internal constructor(private val http: ApiCl
         },
     )
 
-    /** Remove one action link. */
+    /**
+     * Remove one action link.
+     *
+     * Wraps the API's `deleteGoogleBusinessPlaceAction` operation.
+     */
     public suspend fun deletePlaceAction(accountId: String, linkId: String): JsonElement =
         read("DELETE", path(accountId, "/place-actions/$linkId"))
 
-    /** The ways Google will let this location be verified. */
+    /**
+     * The ways Google will let this location be verified.
+     *
+     * Wraps the API's `getGoogleBusinessVerificationOptions` operation.
+     */
     public suspend fun getVerificationOptions(accountId: String, languageCode: String? = null): JsonElement =
         read("GET", path(accountId, "/verification"), query = mapOf("language_code" to languageCode))
 
@@ -179,6 +237,8 @@ public class GoogleBusinessResource internal constructor(private val http: ApiCl
      * Start a verification. [method] is `ADDRESS`, `EMAIL`, `PHONE_CALL`, `SMS`,
      * `AUTO` or `VETTED_PARTNER`; the response names the pending verification to
      * complete with the PIN.
+     *
+     * Wraps the API's `startGoogleBusinessVerification` operation.
      */
     public suspend fun startVerification(
         accountId: String,
@@ -199,7 +259,11 @@ public class GoogleBusinessResource internal constructor(private val http: ApiCl
         },
     )
 
-    /** Complete a pending verification with the PIN Google sent. */
+    /**
+     * Complete a pending verification with the PIN Google sent.
+     *
+     * Wraps the API's `completeGoogleBusinessVerification` operation.
+     */
     public suspend fun completeVerification(
         accountId: String,
         verificationName: String,
@@ -216,6 +280,8 @@ public class GoogleBusinessResource internal constructor(private val http: ApiCl
     /**
      * Daily impressions, calls, direction requests and clicks for the range. An
      * empty [dailyMetrics] leaves the API's own default set.
+     *
+     * Wraps the API's `getGoogleBusinessPerformance` operation.
      */
     public suspend fun getPerformance(
         accountId: String,
@@ -252,6 +318,8 @@ public class GoogleBusinessResource internal constructor(private val http: ApiCl
     /**
      * Hand the location to another workspace the caller owns. The connection and
      * every row keyed to it move in one transaction.
+     *
+     * Wraps the API's `assignGoogleBusinessLocation` operation.
      */
     public suspend fun assign(accountId: String, workspaceId: String): Account = http.call(
         "POST",

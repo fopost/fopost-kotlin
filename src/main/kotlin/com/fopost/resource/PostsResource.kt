@@ -15,6 +15,7 @@ import com.fopost.model.PreflightResult
 import com.fopost.model.PublishResult
 import com.fopost.model.PublishRun
 import com.fopost.model.RetryResult
+import com.fopost.model.UnpublishResult
 import com.fopost.param.CancelParams
 import com.fopost.param.ContentBlockInput
 import com.fopost.param.CreatePostParams
@@ -149,6 +150,10 @@ public class PostsResource internal constructor(
             CancelResult.serializer(),
             http.jsonBody(CancelParams(accountIds), CancelParams.serializer()),
         )
+
+    /** Take a live post down from every network it reached. Needs the `publish` scope. */
+    public suspend fun unpublish(postId: String): UnpublishResult =
+        http.call("POST", "/posts/$postId/unpublish", UnpublishResult.serializer())
 
     /** Per-account blockers and advisory content signals, without publishing anything. */
     public suspend fun preflight(postId: String): PreflightResult =
