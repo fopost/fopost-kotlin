@@ -6,6 +6,7 @@ import com.fopost.model.CollectPostResult
 import com.fopost.model.CollectSummary
 import com.fopost.model.ContentDecay
 import com.fopost.model.Demographics
+import com.fopost.model.InboxAnalytics
 import com.fopost.model.LabelAnalytics
 import com.fopost.model.MetricChangePage
 import com.fopost.model.NativePost
@@ -17,6 +18,7 @@ import com.fopost.model.PostsTable
 import com.fopost.model.TimeSeries
 import com.fopost.model.TopPost
 import com.fopost.param.AnalyticsParams
+import com.fopost.param.InboxAnalyticsParams
 import com.fopost.param.MetricChangesParams
 import com.fopost.param.NativePostsParams
 import java.net.URLEncoder
@@ -39,6 +41,10 @@ public class AnalyticsResource internal constructor(private val http: ApiClient)
     /** Campaign roll-up, one row per label. */
     public suspend fun labels(params: AnalyticsParams = AnalyticsParams()): List<LabelAnalytics> =
         http.callList("GET", "/analytics/labels", LabelAnalytics.serializer(), query = params.toQuery())
+
+    /** Inbox volume, response times and the busiest hours over the period. */
+    public suspend fun inbox(params: InboxAnalyticsParams = InboxAnalyticsParams()): InboxAnalytics =
+        http.call("GET", "/analytics/inbox", InboxAnalytics.serializer(), query = params.toQuery())
 
     public suspend fun postsTable(params: AnalyticsParams = AnalyticsParams()): PostsTable =
         http.call("GET", "/analytics/posts-table", PostsTable.serializer(), query = params.toQuery())

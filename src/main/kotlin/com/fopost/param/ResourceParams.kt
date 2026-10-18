@@ -213,6 +213,21 @@ public data class AnalyticsParams(
     )
 }
 
+/** Scope for inbox analytics. [tz] is an IANA zone name the series and heatmap are bucketed in. */
+public data class InboxAnalyticsParams(
+    val accountId: String? = null,
+    val workspaceId: String? = null,
+    val days: Int? = null,
+    val tz: String? = null,
+) {
+    public fun toQuery(): Map<String, Any?> = mapOf(
+        "account_id" to accountId,
+        "workspace_id" to workspaceId,
+        "days" to days,
+        "tz" to tz,
+    )
+}
+
 /**
  * Filters for the metric changes feed. `since` is an ISO 8601 timestamp; leaving it unset asks for
  * the last seven days.
