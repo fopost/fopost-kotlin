@@ -96,9 +96,9 @@ class AdsTikTokTest {
 
     @Test
     fun `uploads conversions and reports what the network accepted`() = runTest {
-        server.enqueue(json(202, """{"data":{"accepted":2}}"""))
+        server.enqueue(json(202, """{"data":{"id":"cb_1","accepted":2,"eventCount":2,"replayed":false}}"""))
 
-        val accepted = server.client().use { client ->
+        val result = server.client().use { client ->
             client.ads.uploadConversions(
                 UploadConversionsParams(
                     workspaceId = "ws_1",
@@ -116,9 +116,11 @@ class AdsTikTokTest {
             )
         }
 
-        assertEquals(2L, accepted)
+        assertEquals(2, result.accepted)
+        assertEquals("cb_1", result.id)
         val request = server.takeRequest()
         assertEquals("/v1/ads/conversions", request.path)
+        assertEquals(null, request.getHeader("Idempotency-Key"))
         val body = Json.parseToJsonElement(request.body.readUtf8()).jsonObject
         assertEquals("px_1", body["pixelId"]!!.jsonPrimitive.content)
     }
