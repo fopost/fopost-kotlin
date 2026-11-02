@@ -10,7 +10,6 @@ import com.fopost.resource.AdsResource
 import com.fopost.resource.BlogsResource
 import com.fopost.resource.AnalyticsResource
 import com.fopost.resource.AutomationsResource
-import com.fopost.resource.BlogResource
 import com.fopost.resource.CommunitiesResource
 import com.fopost.resource.ConnectSessionsResource
 import com.fopost.resource.BroadcastsResource
@@ -155,8 +154,6 @@ public class FoPost @JvmOverloads constructor(
     /** Manage a connected Google Business Profile location. */
     public val googleBusiness: GoogleBusinessResource = GoogleBusinessResource(api)
 
-    /** The blog: keyword plan, articles and the publishing target. */
-    public val blog: BlogResource = BlogResource(api)
     /** WhatsApp Business: templates, flows, groups, blocking and commerce. */
     public val whatsapp: WhatsappResource = WhatsappResource(api)
 

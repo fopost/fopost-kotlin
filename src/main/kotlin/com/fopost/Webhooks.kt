@@ -20,8 +20,7 @@ import kotlinx.serialization.json.decodeFromJsonElement
 /**
  * A verified webhook delivery: the event name, its payload and when it was sent.
  *
- * [data] is the event-specific body; decode it with [dataAs], e.g.
- * `envelope.dataAs<BlogArticlePublished>()` for `article.published`.
+ * [data] is the event-specific body; decode it with [dataAs].
  */
 public data class WebhookEnvelope(
     val event: String,
@@ -38,12 +37,12 @@ public inline fun <reified T> WebhookEnvelope.dataAs(): T = Webhooks.json.decode
 
 /**
  * Verifies the signature on a webhook delivery, for the endpoints created with
- * `client.webhooks` and for the blog's website target alike.
+ * `client.webhooks`.
  *
  * ```
  * val envelope = Webhooks.verify(rawBody, headers, secret)
- * if (envelope.event == WebhookEvents.ARTICLE_PUBLISHED) {
- *     val article = envelope.dataAs<BlogArticlePublished>()
+ * if (envelope.event == WebhookEvents.POST_PUBLISHED) {
+ *     val post = envelope.dataAs<JsonObject>()
  * }
  * ```
  *
