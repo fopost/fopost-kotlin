@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Removed
+
+- `client.blog`, `BlogParams` and the blog models (`BlogArticle*`, `BlogKeyword*`, `BlogSettings*`,
+  `BlogWebsite*`), retired with the API's `/v1/blog` endpoints, and `WebhookEvents.ARTICLE_PUBLISHED`.
+  `client.blogs` (articles on a connected site) is unchanged.
+
 ### Changed
 
 - **Breaking:** `ads.uploadConversions` answers a `ConversionUploadResult` (`id`, `accepted`,
