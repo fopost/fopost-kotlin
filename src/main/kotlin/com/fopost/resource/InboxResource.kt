@@ -23,6 +23,7 @@ import com.fopost.param.InboxTypingBody
 import com.fopost.param.InboxVoteBody
 import com.fopost.param.MarkInboxReadParams
 import com.fopost.param.RefreshInboxBody
+import com.fopost.param.ResolveInboxParams
 import com.fopost.param.StartInboxConversationParams
 import com.fopost.param.UpdateInboxItemParams
 import kotlinx.serialization.json.JsonObject
@@ -85,6 +86,20 @@ public class InboxResource internal constructor(private val http: ApiClient) {
             InboxRefreshResult.serializer(),
             http.jsonBody(RefreshInboxBody(workspaceId), RefreshInboxBody.serializer()),
         )
+
+    /**
+     * Resolve every unanswered item of one type in bulk. Nothing reaches a platform. Returns how
+     * many items changed.
+     */
+    public suspend fun resolve(params: ResolveInboxParams): Int {
+        val data = http.call(
+            "POST",
+            "/inbox/resolve",
+            JsonObject.serializer(),
+            http.jsonBody(params, ResolveInboxParams.serializer()),
+        )
+        return data["resolved"]?.jsonPrimitive?.intOrNull ?: 0
+    }
 
     /** Mark the item `unread`, `read`, `resolved` or `snoozed`. */
     public suspend fun update(itemId: String, params: UpdateInboxItemParams): InboxItem =

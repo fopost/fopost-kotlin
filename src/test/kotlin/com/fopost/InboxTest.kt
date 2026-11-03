@@ -1,7 +1,10 @@
 package com.fopost
 
+import com.fopost.param.InboxConversationListParams
 import com.fopost.param.InboxListParams
+import com.fopost.param.InboxThreadListParams
 import com.fopost.param.MarkInboxReadParams
+import com.fopost.param.ResolveInboxParams
 import com.fopost.param.StartInboxConversationParams
 import com.fopost.param.UpdateInboxItemParams
 import java.time.Instant
@@ -52,10 +55,24 @@ class InboxTest {
         )
 
         val page = server.client().use { client ->
-            client.inbox.list(InboxListParams(workspaceId = "ws_1", type = "comment", state = "unread", page = 2))
+            client.inbox.list(
+                InboxListParams(
+                    workspaceId = "ws_1",
+                    type = "comment",
+                    status = "unanswered",
+                    since = Instant.parse("2026-09-01T00:00:00Z"),
+                    accountId = "acc_1",
+                    accountIds = listOf("acc_2"),
+                    page = 2,
+                ),
+            )
         }
 
-        assertEquals("/v1/inbox?workspace_id=ws_1&type=comment&state=unread&page=2", server.takeRequest().path)
+        assertEquals(
+            "/v1/inbox?workspace_id=ws_1&type=comment&account_id=acc_1%2Cacc_2&status=unanswered" +
+                "&since=2026-09-01T00%3A00%3A00Z&page=2",
+            server.takeRequest().path,
+        )
         assertEquals(2, page.meta?.currentPage)
         assertEquals(25, page.meta?.perPage)
         assertEquals(51, page.meta?.total)
@@ -67,6 +84,48 @@ class InboxTest {
         assertEquals("image", item.attachments.single().kind)
         assertEquals(true, item.postContext?.isOwn)
         assertEquals("yourbrand", item.account?.username)
+    }
+
+    @Test
+    fun `sends the status and sort filters on threads and conversations`() = runTest {
+        server.enqueue(json(200, """{"data":[],"meta":{"page":1,"perPage":25,"total":0}}"""))
+        server.enqueue(json(200, """{"data":[],"meta":{"page":1,"perPage":25,"total":0}}"""))
+
+        server.client().use { client ->
+            client.inbox.threads(InboxThreadListParams(kind = "reviews", status = "replied", sort = "oldest"))
+            client.inbox.conversations(
+                InboxConversationListParams(accountIds = listOf("acc_1", "acc_2"), status = "resolved"),
+            )
+        }
+
+        assertEquals("/v1/inbox/posts?kind=reviews&status=replied&sort=oldest", server.takeRequest().path)
+        assertEquals("/v1/inbox/conversations?account_id=acc_1%2Cacc_2&status=resolved", server.takeRequest().path)
+    }
+
+    @Test
+    fun `resolves in bulk and returns the count`() = runTest {
+        server.enqueue(json(200, """{"data":{"resolved":4}}"""))
+
+        val resolved = server.client().use { client ->
+            client.inbox.resolve(
+                ResolveInboxParams(
+                    workspaceId = "ws_1",
+                    type = "comment",
+                    accountIds = listOf("acc_1", "acc_2"),
+                    before = Instant.parse("2026-09-01T00:00:00Z"),
+                ),
+            )
+        }
+
+        assertEquals(4, resolved)
+        val request = server.takeRequest()
+        assertEquals("POST", request.method)
+        assertEquals("/v1/inbox/resolve", request.path)
+        val body = Json.parseToJsonElement(request.body.readUtf8()).jsonObject
+        assertEquals("ws_1", body["workspace_id"]!!.jsonPrimitive.content)
+        assertEquals("comment", body["type"]!!.jsonPrimitive.content)
+        assertEquals(listOf("acc_1", "acc_2"), body["account_id"]!!.jsonArray.map { it.jsonPrimitive.content })
+        assertEquals("2026-09-01T00:00:00Z", body["before"]!!.jsonPrimitive.content)
     }
 
     @Test
