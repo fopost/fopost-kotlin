@@ -4,6 +4,7 @@ import com.fopost.param.InboxConversationListParams
 import com.fopost.param.InboxListParams
 import com.fopost.param.InboxThreadListParams
 import com.fopost.param.MarkInboxReadParams
+import com.fopost.param.ResolveInboxParams
 import com.fopost.param.StartInboxConversationParams
 import com.fopost.param.UpdateInboxItemParams
 import java.time.Instant
@@ -99,6 +100,32 @@ class InboxTest {
 
         assertEquals("/v1/inbox/posts?kind=reviews&status=replied&sort=oldest", server.takeRequest().path)
         assertEquals("/v1/inbox/conversations?account_id=acc_1%2Cacc_2&status=resolved", server.takeRequest().path)
+    }
+
+    @Test
+    fun `resolves in bulk and returns the count`() = runTest {
+        server.enqueue(json(200, """{"data":{"resolved":4}}"""))
+
+        val resolved = server.client().use { client ->
+            client.inbox.resolve(
+                ResolveInboxParams(
+                    workspaceId = "ws_1",
+                    type = "comment",
+                    accountIds = listOf("acc_1", "acc_2"),
+                    before = Instant.parse("2026-09-01T00:00:00Z"),
+                ),
+            )
+        }
+
+        assertEquals(4, resolved)
+        val request = server.takeRequest()
+        assertEquals("POST", request.method)
+        assertEquals("/v1/inbox/resolve", request.path)
+        val body = Json.parseToJsonElement(request.body.readUtf8()).jsonObject
+        assertEquals("ws_1", body["workspace_id"]!!.jsonPrimitive.content)
+        assertEquals("comment", body["type"]!!.jsonPrimitive.content)
+        assertEquals(listOf("acc_1", "acc_2"), body["account_id"]!!.jsonArray.map { it.jsonPrimitive.content })
+        assertEquals("2026-09-01T00:00:00Z", body["before"]!!.jsonPrimitive.content)
     }
 
     @Test

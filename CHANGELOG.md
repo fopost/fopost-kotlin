@@ -46,6 +46,9 @@ All notable changes to this project are documented here. The format follows
 - The inbox list params take `status` (`unanswered`, `replied`, `resolved`), `since` (an
   `Instant`) and `accountIds`, which joins with `accountId` into one comma-separated
   `account_id`.
+- `inbox.resolve(ResolveInboxParams)` resolves every unanswered item of one type in bulk,
+  optionally only on some accounts or only items dated `before` an instant, and returns how many
+  changed. Nothing reaches a platform. Needs `inbox`.
 
 ## [0.4.0] - 2026-10-18
 

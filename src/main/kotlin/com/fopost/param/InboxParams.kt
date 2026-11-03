@@ -137,6 +137,18 @@ public data class StartInboxConversationParams(
     @SerialName("media_ids") val mediaIds: List<String>? = null,
 )
 
+/**
+ * Resolve every unanswered item of one [type] (`comment`, `mention`, `review` or `dm`) in a
+ * workspace, optionally only on [accountIds] or only items the platform dates [before] an instant.
+ */
+@Serializable
+public data class ResolveInboxParams(
+    @SerialName("workspace_id") val workspaceId: String,
+    val type: String,
+    @SerialName("account_id") val accountIds: List<String>? = null,
+    val before: Instant? = null,
+)
+
 @Serializable
 internal data class RefreshInboxBody(@SerialName("workspace_id") val workspaceId: String)
 
