@@ -1,6 +1,8 @@
 package com.fopost
 
+import com.fopost.param.InboxConversationListParams
 import com.fopost.param.InboxListParams
+import com.fopost.param.InboxThreadListParams
 import com.fopost.param.MarkInboxReadParams
 import com.fopost.param.StartInboxConversationParams
 import com.fopost.param.UpdateInboxItemParams
@@ -52,10 +54,24 @@ class InboxTest {
         )
 
         val page = server.client().use { client ->
-            client.inbox.list(InboxListParams(workspaceId = "ws_1", type = "comment", state = "unread", page = 2))
+            client.inbox.list(
+                InboxListParams(
+                    workspaceId = "ws_1",
+                    type = "comment",
+                    status = "unanswered",
+                    since = Instant.parse("2026-09-01T00:00:00Z"),
+                    accountId = "acc_1",
+                    accountIds = listOf("acc_2"),
+                    page = 2,
+                ),
+            )
         }
 
-        assertEquals("/v1/inbox?workspace_id=ws_1&type=comment&state=unread&page=2", server.takeRequest().path)
+        assertEquals(
+            "/v1/inbox?workspace_id=ws_1&type=comment&account_id=acc_1%2Cacc_2&status=unanswered" +
+                "&since=2026-09-01T00%3A00%3A00Z&page=2",
+            server.takeRequest().path,
+        )
         assertEquals(2, page.meta?.currentPage)
         assertEquals(25, page.meta?.perPage)
         assertEquals(51, page.meta?.total)
@@ -67,6 +83,22 @@ class InboxTest {
         assertEquals("image", item.attachments.single().kind)
         assertEquals(true, item.postContext?.isOwn)
         assertEquals("yourbrand", item.account?.username)
+    }
+
+    @Test
+    fun `sends the status and sort filters on threads and conversations`() = runTest {
+        server.enqueue(json(200, """{"data":[],"meta":{"page":1,"perPage":25,"total":0}}"""))
+        server.enqueue(json(200, """{"data":[],"meta":{"page":1,"perPage":25,"total":0}}"""))
+
+        server.client().use { client ->
+            client.inbox.threads(InboxThreadListParams(kind = "reviews", status = "replied", sort = "oldest"))
+            client.inbox.conversations(
+                InboxConversationListParams(accountIds = listOf("acc_1", "acc_2"), status = "resolved"),
+            )
+        }
+
+        assertEquals("/v1/inbox/posts?kind=reviews&status=replied&sort=oldest", server.takeRequest().path)
+        assertEquals("/v1/inbox/conversations?account_id=acc_1%2Cacc_2&status=resolved", server.takeRequest().path)
     }
 
     @Test

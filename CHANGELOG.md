@@ -8,6 +8,9 @@ All notable changes to this project are documented here. The format follows
 
 ### Removed
 
+- **Breaking:** `InboxListParams`, `InboxThreadListParams` and `InboxConversationListParams` drop
+  `state`, `platform` and `q`, and `sort` takes `newest` or `oldest` only; the inbox list
+  endpoints no longer read them. Filter by `status` and the account ids instead.
 - `client.blog`, `BlogParams` and the blog models (`BlogArticle*`, `BlogKeyword*`, `BlogSettings*`,
   `BlogWebsite*`), retired with the API's `/v1/blog` endpoints, and `WebhookEvents.ARTICLE_PUBLISHED`.
   `client.blogs` (articles on a connected site) is unchanged.
@@ -40,6 +43,9 @@ All notable changes to this project are documented here. The format follows
   `updateCustomConversion` and `deleteCustomConversion`, with `CustomConversion`,
   `CustomConversionRule` and `CustomConversionEventTypes`.
 - All of these need the `ads` scope only.
+- The inbox list params take `status` (`unanswered`, `replied`, `resolved`), `since` (an
+  `Instant`) and `accountIds`, which joins with `accountId` into one comma-separated
+  `account_id`.
 
 ## [0.4.0] - 2026-10-18
 

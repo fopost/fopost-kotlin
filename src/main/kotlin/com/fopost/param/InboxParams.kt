@@ -11,20 +11,22 @@ import kotlinx.serialization.UseSerializers
 /**
  * Filters for listing inbox items. Every field is optional.
  *
- * [type] is `comment`, `mention` or `dm`; [state] is `unread`, `read`, `resolved` or `snoozed`;
- * [direction] is `inbound` or `outbound`; [sort] is `newest`, `oldest` or `unanswered`.
+ * [type] is `comment`, `mention`, `review` or `dm`; [status] is `unanswered`, `replied` or
+ * `resolved` (a reply also resolves an item); [since] keeps items the platform dates at or after
+ * it; [direction] is `inbound` or `outbound`; [sort] is `newest` or `oldest`. [accountId] and
+ * [accountIds] together name one or more accounts, sent comma-separated.
  */
 public data class InboxListParams(
     val workspaceId: String? = null,
     val type: String? = null,
-    val state: String? = null,
-    val platform: String? = null,
+    val status: String? = null,
+    val since: Instant? = null,
     val accountId: String? = null,
+    val accountIds: List<String>? = null,
     val postId: String? = null,
     val postExternalId: String? = null,
     val conversationId: String? = null,
     val direction: String? = null,
-    val q: String? = null,
     val sort: String? = null,
     val page: Int? = null,
     val perPage: Int? = null,
@@ -32,14 +34,13 @@ public data class InboxListParams(
     public fun toQuery(): Map<String, Any?> = mapOf(
         "workspace_id" to workspaceId,
         "type" to type,
-        "state" to state,
-        "platform" to platform,
-        "account_id" to accountId,
+        "account_id" to joinAccountIds(accountId, accountIds),
+        "status" to status,
+        "since" to since?.toString(),
         "post_id" to postId,
         "post_external_id" to postExternalId,
         "conversation_id" to conversationId,
         "direction" to direction,
-        "q" to q,
         "sort" to sort,
         "page" to page,
         "per_page" to perPage,
@@ -48,15 +49,16 @@ public data class InboxListParams(
 
 /**
  * Filters for listing comment threads. [kind] is `comments` (the default), `mentions`, or
- * `reviews` for one row per review left on the business.
+ * `reviews` for one row per review left on the business. [status], [since], [sort] and the
+ * account filters work as on [InboxListParams].
  */
 public data class InboxThreadListParams(
     val workspaceId: String? = null,
     val kind: String? = null,
-    val platform: String? = null,
     val accountId: String? = null,
-    val state: String? = null,
-    val q: String? = null,
+    val accountIds: List<String>? = null,
+    val status: String? = null,
+    val since: Instant? = null,
     val sort: String? = null,
     val page: Int? = null,
     val perPage: Int? = null,
@@ -64,38 +66,46 @@ public data class InboxThreadListParams(
     public fun toQuery(): Map<String, Any?> = mapOf(
         "workspace_id" to workspaceId,
         "kind" to kind,
-        "platform" to platform,
-        "account_id" to accountId,
-        "state" to state,
-        "q" to q,
+        "account_id" to joinAccountIds(accountId, accountIds),
+        "status" to status,
+        "since" to since?.toString(),
         "sort" to sort,
         "page" to page,
         "per_page" to perPage,
     )
 }
 
-/** Filters for listing direct-message threads. */
+/**
+ * Filters for listing direct-message threads. [status], [since], [sort] and the account filters
+ * work as on [InboxListParams].
+ */
 public data class InboxConversationListParams(
     val workspaceId: String? = null,
-    val platform: String? = null,
     val accountId: String? = null,
-    val state: String? = null,
-    val q: String? = null,
+    val accountIds: List<String>? = null,
+    val status: String? = null,
+    val since: Instant? = null,
     val sort: String? = null,
     val page: Int? = null,
     val perPage: Int? = null,
 ) {
     public fun toQuery(): Map<String, Any?> = mapOf(
         "workspace_id" to workspaceId,
-        "platform" to platform,
-        "account_id" to accountId,
-        "state" to state,
-        "q" to q,
+        "account_id" to joinAccountIds(accountId, accountIds),
+        "status" to status,
+        "since" to since?.toString(),
         "sort" to sort,
         "page" to page,
         "per_page" to perPage,
     )
 }
+
+private fun joinAccountIds(accountId: String?, accountIds: List<String>?): String? =
+    (listOfNotNull(accountId) + accountIds.orEmpty())
+        .filter { it.isNotEmpty() }
+        .distinct()
+        .takeIf { it.isNotEmpty() }
+        ?.joinToString(",")
 
 /** A whole thread to mark read: a comment thread by [postExternalId], or a DM thread by [conversationId]. */
 @Serializable
