@@ -188,29 +188,48 @@ public class PostsResource internal constructor(
     public suspend fun bulkDelete(workspaceId: String, postIds: List<String>): BulkActionResult =
         bulk(BulkActionRequest("delete", workspaceId, postIds))
 
-    /** Check a CSV without creating anything. Every row comes back with its errors, if any. */
-    public suspend fun validateImport(csv: File, workspaceId: String): BulkImportValidation =
-        validateImport(csv.name, csv.readBytes(), workspaceId)
+    /**
+     * Check a CSV without creating anything. Every row comes back with its errors, if any.
+     * [accounts] (ids or platform names) applies to rows whose own accounts cell is empty.
+     */
+    public suspend fun validateImport(
+        csv: File,
+        workspaceId: String,
+        accounts: List<String>? = null,
+    ): BulkImportValidation = validateImport(csv.name, csv.readBytes(), workspaceId, accounts)
 
-    public suspend fun validateImport(filename: String, csv: ByteArray, workspaceId: String): BulkImportValidation =
+    public suspend fun validateImport(
+        filename: String,
+        csv: ByteArray,
+        workspaceId: String,
+        accounts: List<String>? = null,
+    ): BulkImportValidation =
         http.call(
             "POST",
             "/posts/bulk-import/validate",
             BulkImportValidation.serializer(),
-            csvUpload(filename, csv, workspaceId),
+            csvUpload(filename, csv, workspaceId, accounts),
             unwrap = false,
         )
 
     /** Create every valid row. Keep the returned batch id to roll the import back. */
-    public suspend fun commitImport(csv: File, workspaceId: String): BulkImportResult =
-        commitImport(csv.name, csv.readBytes(), workspaceId)
+    public suspend fun commitImport(
+        csv: File,
+        workspaceId: String,
+        accounts: List<String>? = null,
+    ): BulkImportResult = commitImport(csv.name, csv.readBytes(), workspaceId, accounts)
 
-    public suspend fun commitImport(filename: String, csv: ByteArray, workspaceId: String): BulkImportResult =
+    public suspend fun commitImport(
+        filename: String,
+        csv: ByteArray,
+        workspaceId: String,
+        accounts: List<String>? = null,
+    ): BulkImportResult =
         http.call(
             "POST",
             "/posts/bulk-import/commit",
             BulkImportResult.serializer(),
-            csvUpload(filename, csv, workspaceId),
+            csvUpload(filename, csv, workspaceId, accounts),
             unwrap = false,
         )
 
@@ -248,11 +267,12 @@ public class PostsResource internal constructor(
             .apply { files.forEach { addFormDataPart("files", it.filename, it.requestBody()) } }
             .build()
 
-    private fun csvUpload(filename: String, csv: ByteArray, workspaceId: String) =
+    private fun csvUpload(filename: String, csv: ByteArray, workspaceId: String, accounts: List<String>?) =
         MultipartBody.Builder()
             .setType(MultipartBody.FORM)
             .addFormDataPart("file", filename, csv.toRequestBody(CSV_MEDIA_TYPE))
             .addFormDataPart("workspace_id", workspaceId)
+            .apply { if (!accounts.isNullOrEmpty()) addFormDataPart("accounts", accounts.joinToString(",")) }
             .build()
 
     @Serializable

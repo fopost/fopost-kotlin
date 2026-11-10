@@ -8,6 +8,7 @@ import com.fopost.param.PublishParams
 import com.fopost.param.contentOf
 import java.time.Instant
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.flow.toList
@@ -150,6 +151,24 @@ class PostsTest {
         assertTrue(body.contains("""name="files"; filename="chart.png""""), body)
         assertTrue(body.contains("Content-Type: image/png"), body)
         assertTrue(body.contains("""name="workspaceId""""), body)
+    }
+
+    @Test
+    fun `sends default accounts on bulk import only when given`() = runTest {
+        server.enqueue(json(200, """{"total_rows":1,"valid_rows":1,"invalid_rows":0,"rows":[]}"""))
+        server.enqueue(json(201, """{"batch_id":"b1","created":1,"posts":[]}"""))
+        val csv = "content\nHi\n".toByteArray()
+
+        server.client().use { client ->
+            client.posts.validateImport("posts.csv", csv, "ws_1")
+            client.posts.commitImport("posts.csv", csv, "ws_1", listOf("twitter", "linkedin"))
+        }
+
+        val validate = server.takeRequest().body.readUtf8()
+        assertFalse(validate.contains("""name="accounts""""), validate)
+        val commit = server.takeRequest().body.readUtf8()
+        assertTrue(commit.contains("""name="accounts""""), commit)
+        assertTrue(commit.contains("twitter,linkedin"), commit)
     }
 
     @Test
