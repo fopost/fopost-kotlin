@@ -15,6 +15,7 @@ import com.fopost.resource.ConnectSessionsResource
 import com.fopost.resource.BroadcastsResource
 import com.fopost.resource.ContactsResource
 import com.fopost.resource.DesignsResource
+import com.fopost.resource.FontsResource
 import com.fopost.resource.GoogleAdsResource
 import com.fopost.resource.GoogleBusinessResource
 import com.fopost.resource.InboxResource
@@ -163,6 +164,9 @@ public class FoPost @JvmOverloads constructor(
 
     /** Designs: edit, version, export, and bulk-fill templates. */
     public val designs: DesignsResource = DesignsResource(api)
+
+    /** Fonts a design may use, including the workspace's own uploads. */
+    public val fonts: FontsResource = FontsResource(api)
 
     /**
      * Call an endpoint this SDK does not wrap yet, authenticated and retried like any other call.
