@@ -14,6 +14,7 @@ import com.fopost.resource.CommunitiesResource
 import com.fopost.resource.ConnectSessionsResource
 import com.fopost.resource.BroadcastsResource
 import com.fopost.resource.ContactsResource
+import com.fopost.resource.DesignsResource
 import com.fopost.resource.GoogleAdsResource
 import com.fopost.resource.GoogleBusinessResource
 import com.fopost.resource.InboxResource
@@ -159,6 +160,9 @@ public class FoPost @JvmOverloads constructor(
 
     /** Articles and products that already live on a connected site. */
     public val blogs: BlogsResource = BlogsResource(api)
+
+    /** Designs: edit, version, export, and bulk-fill templates. */
+    public val designs: DesignsResource = DesignsResource(api)
 
     /**
      * Call an endpoint this SDK does not wrap yet, authenticated and retried like any other call.
