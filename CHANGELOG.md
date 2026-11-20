@@ -25,6 +25,17 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- `designs`: `list`, `create`, `get`, `update`, `delete`, `versions`, `restoreVersion`,
+  `duplicate`, `export`, `bulk`, `posts`, `textToSlides` and `fromPost`, with `Design`,
+  `DesignSaved`, `DesignVersion`, `DesignExport`, `DesignPost` and `TextSlides`. The design
+  document is passed through as a `JsonObject`. Needs `posts`; `textToSlides` also needs `ai`.
+- `fonts`: `list`, `upload` (from a `File` or bytes) and `delete`, with `FontList`, `LibraryFont`
+  and `UploadedFont`. Needs `posts`.
+- `videoEdits`: `ops`, `list`, `create` and `get`, with `VideoEdit`, `VideoEditOp` and
+  `VideoEditOperation` (`op` plus JSON `params`). Needs `posts`; an operation that uses AI also
+  needs `ai`.
+- `media.generateAltText(mediaId)` describes one library image and answers a `GeneratedAltText`.
+  Needs `ai`.
 - `posts.validateImport` and `posts.commitImport` take an optional `accounts: List<String>?`
   (account ids or platform names), sent comma-separated and applied to every CSV row whose
   own `accounts` cell is empty.

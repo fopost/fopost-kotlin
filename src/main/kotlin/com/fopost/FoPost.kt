@@ -14,6 +14,8 @@ import com.fopost.resource.CommunitiesResource
 import com.fopost.resource.ConnectSessionsResource
 import com.fopost.resource.BroadcastsResource
 import com.fopost.resource.ContactsResource
+import com.fopost.resource.DesignsResource
+import com.fopost.resource.FontsResource
 import com.fopost.resource.GoogleAdsResource
 import com.fopost.resource.GoogleBusinessResource
 import com.fopost.resource.InboxResource
@@ -25,6 +27,7 @@ import com.fopost.resource.PostsResource
 import com.fopost.resource.QueueResource
 import com.fopost.resource.SequencesResource
 import com.fopost.resource.ValidateResource
+import com.fopost.resource.VideoEditsResource
 import com.fopost.resource.WhatsappResource
 import com.fopost.resource.WebhooksResource
 import com.fopost.resource.WorkspacesResource
@@ -159,6 +162,15 @@ public class FoPost @JvmOverloads constructor(
 
     /** Articles and products that already live on a connected site. */
     public val blogs: BlogsResource = BlogsResource(api)
+
+    /** Designs: edit, version, export, and bulk-fill templates. */
+    public val designs: DesignsResource = DesignsResource(api)
+
+    /** Fonts a design may use, including the workspace's own uploads. */
+    public val fonts: FontsResource = FontsResource(api)
+
+    /** Video edit jobs on library videos. */
+    public val videoEdits: VideoEditsResource = VideoEditsResource(api)
 
     /**
      * Call an endpoint this SDK does not wrap yet, authenticated and retried like any other call.

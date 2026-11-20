@@ -73,3 +73,12 @@ public data class UploadLimitTier(
     @SerialName("up_to_accounts") @JsonNames("upToAccounts") val upToAccounts: Int? = null,
     @SerialName("max_file_bytes") @JsonNames("maxFileBytes") val maxFileBytes: Long? = null,
 )
+
+/** Alt text generated for a library image. */
+@Serializable
+public data class GeneratedAltText(
+    @SerialName("alt_text") @JsonNames("altText") val altText: String? = null,
+    /** Always `ai` for a generated description. */
+    @SerialName("alt_text_source") @JsonNames("altTextSource") val altTextSource: String? = null,
+    val tags: List<String>? = null,
+)

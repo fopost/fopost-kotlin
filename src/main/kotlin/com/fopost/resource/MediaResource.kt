@@ -1,6 +1,7 @@
 package com.fopost.resource
 
 import com.fopost.internal.ApiClient
+import com.fopost.model.GeneratedAltText
 import com.fopost.model.MediaLibraryItem
 import com.fopost.model.PresignedUpload
 import com.fopost.model.UploadLimits
@@ -109,6 +110,13 @@ public class MediaResource internal constructor(private val http: ApiClient) {
         mimeType: String,
         data: ByteArray,
     ): UploadedMedia = uploadDirect(workspaceId, UploadFile(filename, mimeType, data))
+
+    /**
+     * Describes one library image and saves the description as its alt text. Spends AI, so a key
+     * also needs the `ai` scope.
+     */
+    public suspend fun generateAltText(mediaId: String): GeneratedAltText =
+        http.call("POST", "/media/$mediaId/alt-text", GeneratedAltText.serializer())
 
     /** Removes the file from the library. Posts already published keep the copy on the platform. */
     public suspend fun delete(mediaId: String) {

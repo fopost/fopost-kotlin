@@ -164,7 +164,7 @@ client.posts.listAll(PostListParams(workspaceId = workspaceId))
 | `webhooks`    | `list`, `create`, `update`, `delete`, `test`, `deliveries`, `delivery`, `redeliver` |
 | `analytics`   | `overview`, `timeSeries`, `topPosts`, `labels`, `postsTable`, `postingStreak`, `demographics`, `collect`, `decay`, `frequency`, `timeline`, `changes`, `collectPost`, `nativePosts`, `inbox` |
 | `automations` | `list`, `get`, `create`, `update`, `delete`, `toggle`, `runs`, `run`, `trigger`, `stats`, `versions`, `version`, `restoreVersion` |
-| `media`       | `list`, `limits`, `upload`, `presign`, `complete`, `uploadDirect`, `delete`                                                                                                                                                                                      |
+| `media`       | `list`, `limits`, `upload`, `presign`, `complete`, `uploadDirect`, `generateAltText`, `delete`                                                                                                                                                                                      |
 | `inbox`       | `list`, `threads`, `conversations`, `unreadCount`, `accounts`, `platforms`, `markThreadRead`, `refresh`, `update`, `resolve`, `editComment`, `reply`, `hide`, `unhide`, `delete`, `like`, `unlike`, `repost`, `unrepost`, `bookmark`, `unbookmark`, `vote`, `pin`, `unpin`, `react`, `startConversation`, `setTyping`, `handover`, `listApprovals`, `approveReply`, `rejectReply`, `deleteConversation`, `attachment` |
 | `contacts`    | `list`, `get`, `create`, `update`, `delete`, `conversations`, `import`, `listFields`, `createField`, `updateField`, `deleteField`, `conversationAnalytics` |
 | `broadcasts`  | `list`, `get`, `create`, `update`, `delete`, `send`, `cancel`, `recipients` |
@@ -181,6 +181,9 @@ client.posts.listAll(PostListParams(workspaceId = workspaceId))
 | `connectSessions` | `create`, `get` |
 | `logs`        | `list` |
 | `activity`    | `list`                                                                                                                                                                                                                                                           |
+| `designs`     | `list`, `create`, `get`, `update`, `delete`, `versions`, `restoreVersion`, `duplicate`, `export`, `bulk`, `posts`, `textToSlides`, `fromPost` |
+| `fonts`       | `list`, `upload`, `delete` |
+| `videoEdits`  | `ops`, `list`, `create`, `get` |
 
 For an endpoint the SDK does not wrap yet, `request` sends an authenticated call and hands back
 the raw body; `requestAs` decodes the `data` payload into a type of yours:
@@ -248,6 +251,33 @@ both:
 ```kotlin
 val file = client.media.uploadDirect("ws_1", UploadFile(File("clip.mp4")), folderId = "fld_1")
 ```
+
+## Designs and video edits
+
+A design's document is passed through as JSON, so build it with `buildJsonObject` or keep the one
+`get` returned. Export renders the pages into the media library:
+
+```kotlin
+val design = client.designs.create(CreateDesignParams(workspaceId, kind = "story", name = "Launch"))
+client.designs.update(design.id!!, UpdateDesignParams(document = document, createVersion = true))
+val export = client.designs.export(design.id!!, ExportDesignParams("png"))
+val mediaIds = export.files.orEmpty().map { it.mediaId }
+```
+
+A video edit runs its operations in order on one library video as a job. Poll `get` until the
+status is `succeeded` or `failed`:
+
+```kotlin
+val job = client.videoEdits.create(
+    CreateVideoEditParams(
+        mediaId = videoId,
+        operations = listOf(VideoEditOperation("trim", buildJsonObject { put("start", 2); put("end", 30) })),
+    ),
+)
+val done = client.videoEdits.get(job.id!!)
+```
+
+`fonts.upload` adds a font file to the workspace, and `media.generateAltText` describes one image.
 
 ## Validation
 
@@ -453,6 +483,8 @@ and duplicating campaigns, ad sets and network ads, and `ads.bulkSetStatus`.
 except `contacts.conversationAnalytics`, which answers counts per thread and needs `analytics`.
 `broadcasts` and `sequences` read under `inbox` too; `broadcasts.send`, `broadcasts.cancel`,
 `sequences.enroll` and `sequences.unenroll` need `publish` as well, because they reach a platform.
+`designs`, `fonts` and `videoEdits` work under `posts`. `designs.textToSlides`,
+`media.generateAltText`, and a video edit with an operation that uses AI need `ai` as well.
 
 ## Example
 
