@@ -90,4 +90,19 @@ class MediaTest {
 
         assertEquals(2, server.requestCount)
     }
+
+    @Test
+    fun `generateAltText posts to the media item and decodes the bare answer`() = runTest {
+        server.enqueue(json(200, """{"alt_text":"A red bicycle","alt_text_source":"ai","tags":["bike","red"]}"""))
+
+        val result = server.client().use { it.media.generateAltText("m1") }
+
+        assertEquals("A red bicycle", result.altText)
+        assertEquals("ai", result.altTextSource)
+        assertEquals(listOf("bike", "red"), result.tags)
+        val req = server.takeRequest()
+        assertEquals("POST", req.method)
+        assertEquals("/v1/media/m1/alt-text", req.path)
+        assertEquals(0L, req.bodySize)
+    }
 }
