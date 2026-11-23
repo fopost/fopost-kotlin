@@ -23,59 +23,6 @@ public data class GoogleAuthorizeParams(
     val returnTo: String? = null,
 )
 
-/** Add a keyword to an ad group. */
-@Serializable
-public data class CreateGoogleKeywordParams(
-    val workspaceId: String,
-    val connectionId: String,
-    val customerId: String,
-    val adGroupId: String,
-    val text: String,
-    /** One of [com.fopost.model.GoogleMatchTypes]. */
-    val matchType: String,
-    val cpcBidMinor: Long? = null,
-)
-
-/** Pause, resume or rebid a keyword. */
-@Serializable
-public data class UpdateGoogleKeywordParams(
-    val workspaceId: String,
-    val connectionId: String,
-    val customerId: String,
-    /** `active` or `paused`. */
-    val status: String? = null,
-    val cpcBidMinor: Long? = null,
-)
-
-/** The scope alone, for a delete that carries it in the body. */
-@Serializable
-public data class GoogleAdsScopeBody(
-    val workspaceId: String,
-    val connectionId: String,
-    val customerId: String,
-)
-
-/** Ask for keyword ideas from seeds, a landing page, or both. */
-@Serializable
-public data class GoogleKeywordIdeasParams(
-    val workspaceId: String,
-    val connectionId: String,
-    val customerId: String,
-    val seeds: List<String>? = null,
-    val url: String? = null,
-    val languageId: String? = null,
-    val geoTargetIds: List<String>? = null,
-)
-
-/** Read the historical metrics of keywords you already have. */
-@Serializable
-public data class GoogleKeywordMetricsParams(
-    val workspaceId: String,
-    val connectionId: String,
-    val customerId: String,
-    val keywords: List<String>,
-)
-
 /** Add a portfolio bid strategy. */
 @Serializable
 public data class CreateGoogleBidStrategyParams(
@@ -105,99 +52,6 @@ public data class SetGoogleAdScheduleParams(
     val customerId: String,
     val campaignId: String,
     val slots: List<GoogleAdScheduleInput>,
-)
-
-/** Create a negative keyword list. */
-@Serializable
-public data class CreateGoogleNegativeKeywordListParams(
-    val workspaceId: String,
-    val connectionId: String,
-    val customerId: String,
-    val name: String,
-)
-
-/** One keyword in a negative list. */
-@Serializable
-public data class GoogleNegativeKeyword(val text: String, val matchType: String)
-
-/** Add keywords to a negative list. */
-@Serializable
-public data class AddGoogleNegativeKeywordsParams(
-    val workspaceId: String,
-    val connectionId: String,
-    val customerId: String,
-    val sharedSetId: String,
-    val keywords: List<GoogleNegativeKeyword>,
-)
-
-/** Put a negative keyword list on a campaign. */
-@Serializable
-public data class AttachGoogleNegativeKeywordListParams(
-    val workspaceId: String,
-    val connectionId: String,
-    val customerId: String,
-    val sharedSetId: String,
-    val campaignId: String,
-)
-
-/**
- * The asset to create. [kind] picks which other fields apply: [text] and [finalUrl] for
- * `sitelink`, [text] alone for `callout`, [header] and [values] for `snippet`.
- */
-@Serializable
-public data class GoogleAssetSpec(
-    val kind: String,
-    val text: String? = null,
-    val description1: String? = null,
-    val description2: String? = null,
-    val finalUrl: String? = null,
-    val header: String? = null,
-    val values: List<String>? = null,
-)
-
-/** Add an asset to the library. */
-@Serializable
-public data class CreateGoogleAssetParams(
-    val workspaceId: String,
-    val connectionId: String,
-    val customerId: String,
-    val spec: GoogleAssetSpec,
-)
-
-/** Attach an asset to the account, or to one campaign. */
-@Serializable
-public data class AttachGoogleAssetParams(
-    val workspaceId: String,
-    val connectionId: String,
-    val customerId: String,
-    val assetId: String,
-    /** One of [com.fopost.model.GoogleAssetFieldTypes]. */
-    val fieldType: String,
-    /** Attaches to the account when left out. */
-    val campaignId: String? = null,
-)
-
-/** Create a Performance Max asset group. */
-@Serializable
-public data class CreateGoogleAssetGroupParams(
-    val workspaceId: String,
-    val connectionId: String,
-    val customerId: String,
-    val campaignId: String,
-    val name: String,
-    val finalUrls: List<String>,
-    /** `active` or `paused`; starts paused when left out. */
-    val status: String? = null,
-)
-
-/** Rename, pause or resume an asset group. */
-@Serializable
-public data class UpdateGoogleAssetGroupParams(
-    val workspaceId: String,
-    val connectionId: String,
-    val customerId: String,
-    val name: String? = null,
-    val status: String? = null,
 )
 
 /** Create a conversion action. */
@@ -271,14 +125,4 @@ public data class GoogleQueryParams(
     val customerId: String,
     val query: String,
     val workspaceId: String? = null,
-)
-
-/** Apply or dismiss recommendations on one account. */
-@Serializable
-public data class GoogleRecommendationsParams(
-    val workspaceId: String,
-    val connectionId: String,
-    val customerId: String,
-    /** Google resource names, each on [customerId]. */
-    val ids: List<String>,
 )

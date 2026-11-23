@@ -3,15 +3,12 @@ package com.fopost
 import com.fopost.model.AdBudget
 import com.fopost.model.AdTargeting
 import com.fopost.model.AdTargetingLocation
-import com.fopost.param.AdCreativeCard
 import com.fopost.param.AdObjectRef
 import com.fopost.param.AudienceSpec
 import com.fopost.param.BoostPostParams
 import com.fopost.param.BulkAdStatusParams
-import com.fopost.param.CreateAdCreativeParams
 import com.fopost.param.CreateAudienceParams
 import com.fopost.param.MetaAuthorizeParams
-import com.fopost.param.UpdateAdCampaignParams
 import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -176,33 +173,7 @@ class AdsTest {
     }
 
     @Test
-    fun `reads the account tree with the connection in the query`() = runTest {
-        server.enqueue(
-            json(
-                200,
-                """
-                {"data":{"adAccountId":"act_123","currency":"USD","workspaceId":"ws_1",
-                  "campaigns":[{"id":"cmp_1","name":"Launch","status":"PAUSED","budgetMinor":null,
-                    "adSets":[{"id":"set_1","campaignId":"cmp_1","status":"PAUSED","budgetMinor":2000,"budgetType":"daily",
-                      "ads":[{"id":"ad_9","adSetId":"set_1","creativeId":"cr_1","status":"PAUSED"}]}]}]}}
-                """.trimIndent(),
-            ),
-        )
-
-        val tree = server.client().use { it.ads.accountTree("act_123", "conn_1", workspaceId = "ws_1") }
-
-        val request = server.takeRequest()
-        assertEquals("GET", request.method)
-        assertEquals("/v1/ads/accounts/act_123/tree?workspace_id=ws_1&connection_id=conn_1", request.path)
-        assertNull(tree.campaigns[0].budgetMinor)
-        assertEquals(2000L, tree.campaigns[0].adSets[0].budgetMinor)
-        assertEquals("cr_1", tree.campaigns[0].adSets[0].ads[0].creativeId)
-    }
-
-    @Test
-    fun `updates, duplicates and bulk-pauses campaign objects`() = runTest {
-        server.enqueue(json(200, """{"data":{"id":"cmp_1","status":"ACTIVE"}}"""))
-        server.enqueue(json(201, """{"data":{"id":"cmp_2"}}"""))
+    fun `bulk-pauses campaign objects`() = runTest {
         server.enqueue(
             json(
                 200,
@@ -211,10 +182,8 @@ class AdsTest {
             ),
         )
 
-        val (copyId, results) = server.client().use { client ->
-            client.ads.updateCampaign("cmp_1", "ws_1", "conn_1", UpdateAdCampaignParams(status = "active"))
-            val copy = client.ads.duplicateCampaign("cmp_1", "ws_1", "conn_1", paused = false)
-            copy to client.ads.bulkSetStatus(
+        val results = server.client().use { client ->
+            client.ads.bulkSetStatus(
                 BulkAdStatusParams(
                     workspaceId = "ws_1",
                     connectionId = "conn_1",
@@ -224,18 +193,10 @@ class AdsTest {
             )
         }
 
-        val update = server.takeRequest()
-        assertEquals("PATCH", update.method)
-        assertEquals("/v1/ads/campaigns/cmp_1?workspace_id=ws_1&connection_id=conn_1", update.path)
-        assertEquals("""{"status":"active"}""", update.body.readUtf8())
-
-        val duplicate = server.takeRequest()
-        assertEquals("/v1/ads/campaigns/cmp_1/duplicate?workspace_id=ws_1&connection_id=conn_1", duplicate.path)
-        assertEquals("""{"paused":false}""", duplicate.body.readUtf8())
-        assertEquals("cmp_2", copyId)
-
-        val bulk = Json.parseToJsonElement(server.takeRequest().body.readUtf8()).jsonObject
-        assertEquals("campaign", bulk["objects"]!!.jsonArray[0].jsonObject["level"]!!.jsonPrimitive.content)
+        val bulk = server.takeRequest()
+        assertEquals("/v1/ads/status", bulk.path)
+        val body = Json.parseToJsonElement(bulk.body.readUtf8()).jsonObject
+        assertEquals("campaign", body["objects"]!!.jsonArray[0].jsonObject["level"]!!.jsonPrimitive.content)
         assertEquals("Not found", results[1].error)
     }
 
@@ -301,37 +262,5 @@ class AdsTest {
         assertEquals(listOf("jordan@yourbrand.com"), first.leads[0].fields[0].values)
         assertEquals(Instant.parse("2026-09-02T08:00:00Z"), first.leads[0].submittedAt)
         assertNull(next.nextCursor)
-    }
-
-    @Test
-    fun `creates a carousel creative with url tags and lists creatives`() = runTest {
-        server.enqueue(json(201, """{"data":{"id":"cr_1","format":"carousel","urlTags":"utm_source=meta"}}"""))
-        server.enqueue(json(200, """{"data":{"creatives":[{"id":"cr_1","name":"Spring"}],"workspaceId":"ws_1"}}"""))
-
-        val (creative, list) = server.client().use { client ->
-            client.ads.createCreative(
-                CreateAdCreativeParams(
-                    workspaceId = "ws_1",
-                    connectionId = "conn_1",
-                    adAccountId = "act_123",
-                    pageId = "page_1",
-                    name = "Spring",
-                    format = "carousel",
-                    text = "New season",
-                    urlTags = "utm_source=meta",
-                    cards = listOf(
-                        AdCreativeCard("https://cdn.yourbrand.com/1.jpg"),
-                        AdCreativeCard("https://cdn.yourbrand.com/2.jpg"),
-                    ),
-                ),
-            ) to client.ads.creatives("conn_1", "act_123")
-        }
-
-        val body = Json.parseToJsonElement(server.takeRequest().body.readUtf8()).jsonObject
-        assertEquals("utm_source=meta", body["urlTags"]!!.jsonPrimitive.content)
-        assertEquals(2, body["cards"]!!.jsonArray.size)
-        assertEquals("utm_source=meta", creative.urlTags)
-        assertEquals("/v1/ads/creatives?connection_id=conn_1&ad_account_id=act_123", server.takeRequest().path)
-        assertEquals("Spring", list[0].name)
     }
 }
