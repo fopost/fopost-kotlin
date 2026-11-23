@@ -283,87 +283,6 @@ public data class LeadsPage(
     @SerialName("next_cursor") @JsonNames("nextCursor") val nextCursor: String? = null,
 )
 
-/** A campaign on a Meta ad account, read live. [status] is `ACTIVE`, `PAUSED`, `DELETED` or `ARCHIVED`. */
-@Serializable
-public data class AdCampaign(
-    val id: String? = null,
-    val name: String? = null,
-    val status: String? = null,
-    @SerialName("effective_status") @JsonNames("effectiveStatus") val effectiveStatus: String? = null,
-    val objective: String? = null,
-    /** Null when the budget lives on the ad sets. */
-    @SerialName("budget_minor") @JsonNames("budgetMinor") val budgetMinor: Long? = null,
-    @SerialName("budget_type") @JsonNames("budgetType") val budgetType: String? = null,
-    @SerialName("created_at") @JsonNames("createdAt") val createdAt: String? = null,
-)
-
-/** An ad set on a Meta ad account, read live. [budgetType] is `daily` or `lifetime`. */
-@Serializable
-public data class AdSet(
-    val id: String? = null,
-    val name: String? = null,
-    @SerialName("campaign_id") @JsonNames("campaignId") val campaignId: String? = null,
-    val status: String? = null,
-    @SerialName("effective_status") @JsonNames("effectiveStatus") val effectiveStatus: String? = null,
-    @SerialName("budget_minor") @JsonNames("budgetMinor") val budgetMinor: Long? = null,
-    @SerialName("budget_type") @JsonNames("budgetType") val budgetType: String? = null,
-    @SerialName("end_at") @JsonNames("endAt") val endAt: String? = null,
-    @SerialName("optimization_goal") @JsonNames("optimizationGoal") val optimizationGoal: String? = null,
-    @SerialName("created_at") @JsonNames("createdAt") val createdAt: String? = null,
-)
-
-/** An ad inside an ad set on a Meta ad account, read live. */
-@Serializable
-public data class NetworkAd(
-    val id: String? = null,
-    val name: String? = null,
-    @SerialName("campaign_id") @JsonNames("campaignId") val campaignId: String? = null,
-    @SerialName("ad_set_id") @JsonNames("adSetId") val adSetId: String? = null,
-    @SerialName("creative_id") @JsonNames("creativeId") val creativeId: String? = null,
-    val status: String? = null,
-    @SerialName("effective_status") @JsonNames("effectiveStatus") val effectiveStatus: String? = null,
-    @SerialName("created_at") @JsonNames("createdAt") val createdAt: String? = null,
-)
-
-/** An ad set in an [AdAccountTree], with its ads. */
-@Serializable
-public data class AdSetNode(
-    val id: String? = null,
-    val name: String? = null,
-    @SerialName("campaign_id") @JsonNames("campaignId") val campaignId: String? = null,
-    val status: String? = null,
-    @SerialName("effective_status") @JsonNames("effectiveStatus") val effectiveStatus: String? = null,
-    @SerialName("budget_minor") @JsonNames("budgetMinor") val budgetMinor: Long? = null,
-    @SerialName("budget_type") @JsonNames("budgetType") val budgetType: String? = null,
-    @SerialName("end_at") @JsonNames("endAt") val endAt: String? = null,
-    @SerialName("optimization_goal") @JsonNames("optimizationGoal") val optimizationGoal: String? = null,
-    @SerialName("created_at") @JsonNames("createdAt") val createdAt: String? = null,
-    val ads: List<NetworkAd> = emptyList(),
-)
-
-/** A campaign in an [AdAccountTree], with its ad sets. */
-@Serializable
-public data class CampaignNode(
-    val id: String? = null,
-    val name: String? = null,
-    val status: String? = null,
-    @SerialName("effective_status") @JsonNames("effectiveStatus") val effectiveStatus: String? = null,
-    val objective: String? = null,
-    @SerialName("budget_minor") @JsonNames("budgetMinor") val budgetMinor: Long? = null,
-    @SerialName("budget_type") @JsonNames("budgetType") val budgetType: String? = null,
-    @SerialName("created_at") @JsonNames("createdAt") val createdAt: String? = null,
-    @SerialName("ad_sets") @JsonNames("adSets") val adSets: List<AdSetNode> = emptyList(),
-)
-
-/** Every campaign on an ad account, with its ad sets and their ads. */
-@Serializable
-public data class AdAccountTree(
-    @SerialName("ad_account_id") @JsonNames("adAccountId") val adAccountId: String? = null,
-    val currency: String? = null,
-    @SerialName("workspace_id") @JsonNames("workspaceId") val workspaceId: String? = null,
-    val campaigns: List<CampaignNode> = emptyList(),
-)
-
 /** The outcome for one object of a bulk status change. [error] is null when it worked. */
 @Serializable
 public data class BulkAdStatusResult(
@@ -372,27 +291,6 @@ public data class BulkAdStatusResult(
     val level: String? = null,
     val ok: Boolean? = null,
     val error: String? = null,
-)
-
-/** A creative on a Meta ad account. [format] is `image`, `video`, `carousel`, `post` or `other`. */
-@Serializable
-public data class AdCreative(
-    val id: String? = null,
-    val name: String? = null,
-    val format: String? = null,
-    val status: String? = null,
-    val title: String? = null,
-    val body: String? = null,
-    val link: String? = null,
-    @SerialName("thumbnail_url") @JsonNames("thumbnailUrl") val thumbnailUrl: String? = null,
-    @SerialName("call_to_action") @JsonNames("callToAction") val callToAction: String? = null,
-    @SerialName("url_tags") @JsonNames("urlTags") val urlTags: String? = null,
-)
-
-/** The creatives on an ad account. */
-@Serializable
-internal data class AdCreativesResult(
-    val creatives: List<AdCreative> = emptyList(),
 )
 
 /** The audience size range for a targeting. [ready] is false while Meta is still sizing it. */

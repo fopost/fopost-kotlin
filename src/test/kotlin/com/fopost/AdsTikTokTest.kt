@@ -4,7 +4,6 @@ import com.fopost.model.AdBudget
 import com.fopost.model.AdTargeting
 import com.fopost.param.AdCommentParams
 import com.fopost.param.ConversionEvent
-import com.fopost.param.CreateAdCampaignParams
 import com.fopost.param.CreateAdParams
 import com.fopost.param.UploadConversionsParams
 import kotlin.test.assertEquals
@@ -57,9 +56,8 @@ class AdsTikTokTest {
     }
 
     @Test
-    fun `sends sparkPostId on an ad and smartPlus on a campaign`() = runTest {
+    fun `sends sparkPostId on an ad`() = runTest {
         server.enqueue(json(201, """{"data":{"id":"ad_1","workspaceId":"ws_1","kind":"ad","name":"Spark","goal":"traffic","status":"paused"}}"""))
-        server.enqueue(json(201, """{"data":{"id":"c1","name":"Smart","status":"PAUSED"}}"""))
 
         server.client().use { client ->
             client.ads.create(
@@ -76,22 +74,10 @@ class AdsTikTokTest {
                     sparkPostId = "item_99",
                 ),
             )
-            client.ads.createCampaign(
-                CreateAdCampaignParams(
-                    workspaceId = "ws_1",
-                    connectionId = "conn_1",
-                    adAccountId = "7011",
-                    name = "Smart",
-                    goal = "traffic",
-                    smartPlus = true,
-                ),
-            )
         }
 
         val adBody = Json.parseToJsonElement(server.takeRequest().body.readUtf8()).jsonObject
         assertEquals("item_99", adBody["sparkPostId"]!!.jsonPrimitive.content)
-        val campaignBody = Json.parseToJsonElement(server.takeRequest().body.readUtf8()).jsonObject
-        assertEquals("true", campaignBody["smartPlus"]!!.jsonPrimitive.content)
     }
 
     @Test
