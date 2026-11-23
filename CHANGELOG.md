@@ -14,6 +14,17 @@ All notable changes to this project are documented here. The format follows
 - `client.blog`, `BlogParams` and the blog models (`BlogArticle*`, `BlogKeyword*`, `BlogSettings*`,
   `BlogWebsite*`), retired with the API's `/v1/blog` endpoints, and `WebhookEvents.ARTICLE_PUBLISHED`.
   `client.blogs` (articles on a connected site) is unchanged.
+- **Breaking:** the ads calls for objects the API no longer serves: `ads.accountTree`, the campaign,
+  ad set and network ad calls (`createCampaign`, `campaign`, `updateCampaign`, `deleteCampaign`,
+  `duplicateCampaign`, `createAdSet`, `adSet`, `updateAdSet`, `deleteAdSet`, `duplicateAdSet`,
+  `createNetworkAd`, `networkAd`, `updateNetworkAd`, `deleteNetworkAd`, `duplicateNetworkAd`), the
+  creative calls, the catalog, product, feed and product set calls, and `ads.library`, with their
+  models and params. `ads.bulkSetStatus`, boosts, standalone ads (`/ads/{id}`), audiences, insights
+  and lead forms are unchanged.
+- **Breaking:** `googleAds` keywords, keyword ideas and metrics, search terms, negative keyword
+  lists, assets, asset groups, recommendations and the optimization score, with their models and
+  params (including `GoogleMatchTypes` and `GoogleAssetFieldTypes`). Bid strategies, the ad
+  schedule, Local Services leads, conversions and `query` are unchanged.
 
 ### Changed
 
